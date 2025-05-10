@@ -1,0 +1,178 @@
+@font-face {
+    font-family: 'Roboto Slab';
+    src: url('/fonts/RobotoSlab/RobotoSlab-ExtraLight.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'Roboto Slab';
+    src: url('/fonts/RobotoSlab/RobotoSlab-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'Roboto Slab';
+    src: url('/fonts/RobotoSlab/RobotoSlab-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'Roboto Slab';
+    src: url('/fonts/RobotoSlab/RobotoSlab-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'Roboto Slab';
+    src: url('/fonts/RobotoSlab/RobotoSlab-ExtraBold.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
+  }
+  body {
+    font-family: 'Roboto Slab', serif;
+  }
+
+  .login-card{
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+   
+    overflow: hidden;
+    text-align: center;
+}
+.login-card::before{
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%; 
+    width: 100%;
+    transform-origin: bottom right;
+    animation: animate 6s linear infinite;
+    height: 100%;
+    background: rgba(255, 153, 51);
+   
+}
+.login-card::after{
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%; 
+    width: 100%;
+    transform-origin: bottom right;
+    animation: animate 6s linear infinite;
+    height: 100%;
+    background: rgba(19, 136, 8);
+    animation-delay: -3s;
+    z-index: -1;
+   
+}
+
+.track-ball {
+    position: absolute;
+    transition: top 0.05s, left 0.05s;
+    pointer-events: none;
+    background-color: rgb(255, 196, 87); /* Soft golden orange */
+    border-radius: 50%;
+    width: 250px;
+    height: 250px;
+    filter: blur(50px);
+    transition: top 0.05s, left 0.05s;
+    /* ✨ Adjusted glow matching new ball color */
+    box-shadow:
+      0 0 30px 15px rgba(255, 196, 87, 0.8),  /* Main ball color */
+      0 0 60px 30px rgba(255, 215, 100, 0.6), /* Slightly lighter golden */
+      0 0 90px 45px rgba(255, 240, 150, 0.4), /* Very light soft glow */
+      0 0 140px 70px rgba(255, 255, 200, 0.3); /* Almost white outer aura */
+  }
+.track-ball::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(21, 245, 252, 0.1); /* Slight inner glow */
+    border-radius: 50%;
+    box-shadow: 0 0 50px 25px rgb(255, 196, 87);
+    z-index: -1; /* Make sure it stays behind the circle */
+}
+
+.dashboard-layout {
+    position: relative;
+    background: transparent; /* 👈 Important: Must be transparent */
+    overflow: hidden;
+    background-color: #dfdfdf;
+    display: flex;
+    min-height: 100vh;
+    min-width: 100vw;
+}
+  
+.cover{   
+    display: flex;
+    min-width: 100%; 
+    min-height: 100%; 
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(25px);
+    z-index: 2;
+    position: relative; 
+}
+
+.left-navbar {
+    height: 100%;
+    width: 300px;
+    background-color: #faf9f96c;;
+    padding: 10px;
+    border: 1px solid rgb(216, 216, 216);
+    transition: border 0.3s ease-in-out;
+}
+
+
+.top-navbar{
+    width: 100%;
+    height: 80px;
+    background-color: #faf9f96c;
+    padding: 10px;
+}
+
+
+.content{
+    background-color: #faf9f96c;
+    border-radius: 10px;
+    height: 100%;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+
+/* Register Page Css */
+.registration-form-base{
+    margin-top: 70px;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+
+}
+
+@keyframes animate {
+    0%{
+        transform: rotate(0deg);
+    }
+    100%{
+        transform: rotate(360deg);
+    }
+}
+
+  
+  .form-base {
+    padding: 10px;
+    box-shadow: -10px -10px 30px  rgb(255, 166, 0), 10px 10px 30px rgb(38, 170, 38);
+   
+
+  }
+
+ 
