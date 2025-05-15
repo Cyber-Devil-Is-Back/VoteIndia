@@ -1,7 +1,7 @@
 "use client";
 import AdminDashBoardLayout from "@/components/admin/AdminDashBoardLayout";
 import DataGridComp from "@/components/DataGrid";
-import { Box, Chip, Typography } from "@mui/material";
+import { Avatar, Box, Chip, Typography } from "@mui/material";
 import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
@@ -36,35 +36,11 @@ const columns: GridColDef[] = [
   { field: 'party_email', headerName: 'Party Email', width: 250 },
   { field: 'party_leader', headerName: 'Party Leader', width: 220 },
   { field: 'phone_number', headerName: 'Phone Number', width: 200 },
-  {
-    field: 'party_logo',
-    headerName: 'Party Logo',
-    width: 150,
-    renderCell: (params) => (
-      <Box display='flex' justifyContent='center'>
-        <img
-          src={`${process.env.NEXT_PUBLIC_API_URL}/${params.value}`}
-          alt="Party Logo"
-          style={{ width: '50px', height: '50px' }}
-        />
-      </Box>
-    ),
-  },
-  {
-    field: 'status',
-    headerName: 'Status',
-    width: 130,
-    renderCell: () => (
-      <Chip
-        icon={<HourglassTopIcon fontSize="small" />}
-        label="Pending"
-        color="info"
-        size="small"
-        variant="outlined"
-        sx={{ fontWeight: 'bold' }}
-      />
-    ),
-  },
+  {field: 'party_logo',headerName: 'Party Logo',width: 150,renderCell: (params) => ( 
+    <Box display="flex" justifyContent="center" alignItems="center">
+      <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${params.value}`} alt="Party Logo" variant="rounded" style={{ width: '100px', height: '100px' }} />
+    </Box>),},
+  { field: 'status', headerName: 'Status', width: 130, renderCell: () => (<Chip icon={<HourglassTopIcon fontSize="small" />} label="Pending"  color="info"  size="small"  variant="outlined"  sx={{ fontWeight: 'bold' }} /> ),},
 ];
 
 export default function NewParty() {

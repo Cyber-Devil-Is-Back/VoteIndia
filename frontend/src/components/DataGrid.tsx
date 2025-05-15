@@ -31,7 +31,10 @@ export default function DataGridComp({ columns, rows, loading, dataGridProps }: 
             color: 'white',
           },
           '& .MuiDataGrid-columnHeaderTitle': {
-            fontWeight: 800
+            fontWeight: 800,
+            width: '100%',
+            justifyContent: 'center',
+            textAlign: 'center',
           },
           '& .MuiDataGrid-columnHeaderFilterInput:hover': {
             color: "white"
@@ -51,7 +54,16 @@ export default function DataGridComp({ columns, rows, loading, dataGridProps }: 
           },
           '& .MuiDataGrid-row':{
             borderBottom: '3px solid #cccc',
-          }
+          },
+          '& .MuiDataGrid-cell': {
+            justifyContent: 'center',
+            textAlign: 'center',
+          },
+          '& .MuiDataGrid-columnHeaders': {
+            justifyContent: 'center',
+            textAlign: 'center',
+          },
+    
         }}
         {...dataGridProps}
       />

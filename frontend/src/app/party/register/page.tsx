@@ -117,6 +117,7 @@ export default function Register(){
       });
     }
     else{
+      console.log(response)
       setSnackbar(true);
       setLoading(false);
       setSuccess(false);

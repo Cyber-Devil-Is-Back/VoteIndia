@@ -26,6 +26,8 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
         .service( web::scope("/party")
                 .service(parties::constutiency::get_districts)
                 .service(parties::constutiency::get_state)
+                .service(parties::constutiency::get_national_states)
+                .service(parties::constutiency::get_national_constituency)
                 .service(parties::party::login_party)
                 .service(parties::party::get_all_new_parties)
                 .service(parties::party::register_party)

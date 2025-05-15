@@ -1,3 +1,4 @@
+use web3::contract::tokens::Tokenizable;
 use web3::contract::{Contract, Error, Options, tokens::Detokenize};
 use web3::ethabi::Token;
 use web3::transports::Http;
@@ -8,7 +9,7 @@ use super::helper::Owner;
 
 
 #[derive(Debug, Clone)]
-pub  struct PartyData {
+pub struct PartyData {
     pub id: u64,
     pub name: String,
     pub abbreviation: String,
@@ -17,34 +18,34 @@ pub  struct PartyData {
     pub description: String,
     pub party_type: u8,
     pub manifesto: String,
-    pub founder:String,
+    pub founder: String,
     pub logo: String,
     pub state: String,
 }
 
-impl  Detokenize for PartyData {
-    fn from_tokens(tokens: Vec<Token>) -> Result<Self, web3::contract::Error> {
+impl Detokenize for PartyData {
+    fn from_tokens(tokens: Vec<Token>) -> Result<Self, Error> {
         if tokens.len() != 11 {
-            return Err(web3::contract::Error::InvalidOutputType(format!(
-                "Expected 10 tokens, got {}",
+            return Err(Error::InvalidOutputType(format!(
+                "Expected 11 tokens, got {}",
                 tokens.len()
             )));
         }
+
         Ok(PartyData {
             id: tokens[0].clone().into_uint().unwrap().as_u64(),
-            name: tokens[1].clone().to_string(),
-            abbreviation: tokens[2].clone().to_string(),
-            slogan: tokens[3].clone().to_string(),
-            description: tokens[4].clone().to_string(),
-            party_type: tokens[5].clone().into_uint().unwrap().as_u64() as u8,
-            manifesto: tokens[6].clone().to_string(),
-            founder: tokens[7].clone().to_string(),
-            logo: tokens[7].clone().to_string(),
-            state: tokens[8].clone().to_string(),
-            registered_on: tokens[9].clone().to_string(),
+            name: tokens[1].clone().into_string().unwrap(),
+            abbreviation: tokens[2].clone().into_string().unwrap(),
+            slogan: tokens[3].clone().into_string().unwrap(),
+            registered_on: tokens[4].clone().into_string().unwrap(),
+            description: tokens[5].clone().into_string().unwrap(),
+            party_type: tokens[6].clone().into_uint().unwrap().as_u64() as u8,
+            manifesto: tokens[7].clone().into_string().unwrap(),
+            founder: tokens[8].clone().into_string().unwrap(),
+            logo: tokens[9].clone().into_string().unwrap(),
+            state: tokens[10].clone().into_string().unwrap(),
         })
     }
-    
 }
 pub struct  PartyRegisterClient{
     pub contract: Contract<Http>,
@@ -85,11 +86,37 @@ impl PartyRegisterClient {
                     None => Err(Error::from("Transaction receipt not found. Try increasing gas.".to_string())),
                 }
     }
-    pub async fn get_party_by_id(&self, party_id: U256) -> Result<PartyData, Error> {
-        let result = self.contract.query("getPartyById", (party_id,), None, Options::default(), None).await?;
-        let party_data: PartyData = PartyData::from_tokens(result)?;
-        Ok(party_data)
+   pub async fn get_party_by_id(&self, party_id: U256) -> Result<PartyData, Error> {
+    let result: Token = self
+        .contract
+        .query("getPartyById", (party_id,), None, Options::default(), None)
+        .await.unwrap();
+    match result {
+        Token::Tuple(inner_tokens) => {
+            let party_data = PartyData::from_tokens(inner_tokens).unwrap();
+            Ok(party_data)
+        }
+        _ => {
+            Err(Error::InvalidOutputType("Expected tuple token".into()))
+        }
     }
+    // Expecting exactly one token which is a tuple
+    // if result.len() != 1 {
+    //     return Err(Error::InvalidOutputType(format!(
+    //         "Expected 1 token (tuple), got {}",
+    //         result.len()
+    //     )));
+    // }
+
+    // match &result[0] {
+    //     Token::Tuple(inner_tokens) => {
+    //         let party_data = PartyData::from_tokens(inner_tokens.clone())?;
+    //         Ok(party_data)
+    //     }
+    //     _ => Err(Error::InvalidOutputType("Expected tuple token".into())),
+    // }
+}
+
     pub async fn get_party_by_name(&self, party_name: &str) -> Result<PartyData, Error> {
         let result = self.contract.query("getPartyByName", (party_name.to_string(),), None, Options::default(), None).await?;
         let party_data: PartyData = PartyData::from_tokens(result)?;

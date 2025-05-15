@@ -5,7 +5,7 @@ use actix_web::{get, put};
 use actix_web::web::Json;
 use actix_web::{post, web::Data, HttpResponse, Responder};
 use futures::StreamExt;
-use mongodb::bson::{doc, Bson};
+use mongodb::bson::{doc, Bson, Document};
 use mongodb::{Client, Collection};
 use serde_json::json;
 
@@ -14,7 +14,7 @@ use super::forms::RegisterNationalCandidate;
 
 
 
-#[post("/national/register")]
+#[post("/national/candidate/register")]
 pub async fn register_candidate(client: Data<Client>, mut form: MultipartForm<RegisterNationalCandidate>) -> impl Responder {
     let client  = client.database("voteIndia");
     let collection:Collection<NationalCandidate> = client.collection("national_candidates");
@@ -37,7 +37,10 @@ pub async fn register_candidate(client: Data<Client>, mut form: MultipartForm<Re
     let img_path = PathBuf::from(&upload_dir).join(format!("Candidates/{}",format!("{}.{}",uuid::Uuid::new_v4(),ext)));
     let mut file = File::create(&img_path).unwrap();
     std::io::copy(&mut form.0.image.file, &mut file).unwrap();
+    let id  = collection.count_documents(doc! {}).await.unwrap();
+    let id = id + 1;
     let candidate = NationalCandidate {
+        id: id as i64,
         party_id: form.0.party_id.clone(),
         name: form.0.name.clone(),
         gender: form.0.gender.clone(),
@@ -61,28 +64,36 @@ pub async fn register_candidate(client: Data<Client>, mut form: MultipartForm<Re
 }
 
 
-#[put("/national/update_status/")]
+#[put("/national/candidate/update_status/")]
 pub async fn update_candidate_status(client: Data<Client>, data: Json<Status>) -> impl Responder {
     let client = client.database("voteIndia");
-    let collection: Collection<NationalCandidate> = client.collection("state_candidates");
-    let filter = doc! { "_id": Bson::Int64(data.id as i64) };
-    let update = doc! { "$set": { "status": data.status.clone() } };
+    let collection: Collection<NationalCandidate> = client.collection("national_candidates");
+    let filter = doc! { "id": Bson::Int64(data.id as i64) };
+    let  update :Document;
+    if data.status != PartyStatus::Approved && data.status != PartyStatus::Rejected {
+        return HttpResponse::BadRequest().json("Invalid status");
+    }
+
+    if data.status == PartyStatus::Rejected{
+        update = doc! { "$set": { "status": PartyStatus::Rejected,"reason": data.reason.clone() } };
+    } else {
+        update = doc! { "$set": { "status": PartyStatus::Approved } };
+    }
     let result = collection.update_one(filter, update).await;
     match result {
         Ok(_) => {
-            println!("Candidate status updated successfully");
+            return HttpResponse::Ok().json("Candidate status updated successfully")
         }
-        Err(e) => {
-            println!("Error updating candidate status: {}", e);
+        Err(_) => {
+
             return HttpResponse::InternalServerError().json("Error updating candidate status");
         }
     }
-   HttpResponse::Ok().json("Candidate status updated successfully")
 }
-#[get("/national/get_all_new")]
+#[get("/national/candidate/get_all_new")]
 pub async fn get_all_new_candidates(client: Data<Client>) -> impl Responder {
     let client = client.database("voteIndia");
-    let collection: Collection<NationalCandidate> = client.collection("state_candidates");
+    let collection: Collection<NationalCandidate> = client.collection("national_candidates");
     let filter = doc! { "status": PartyStatus::Pending };
     let candidates = collection.find(filter).await;
     match candidates {
@@ -102,7 +113,7 @@ pub async fn get_all_new_candidates(client: Data<Client>) -> impl Responder {
         }
     }
 }
-#[get("/national/get_all")]
+#[get("/national/candidate/get_all")]
 pub async fn get_all_candidates(client: Data<Client>) -> impl Responder {
     let client = client.database("voteIndia");
     let collection: Collection<NationalCandidate> = client.collection("national_candidates");

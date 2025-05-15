@@ -1,10 +1,12 @@
+
 use actix_web::{get, web::{Data, Query}, HttpResponse, Responder};
 use futures::StreamExt;
 use mongodb::{
     bson::{doc, Bson, Document},
     Client,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 const DB_NAME: &str = "voteIndia";
 
@@ -13,7 +15,7 @@ pub struct StateQuery {
     state: String,
 }
 
-#[get("/districts/")]
+#[get("state/districts/")]
 pub async fn get_districts(client: Data<Client>,query: Query<StateQuery>,) -> impl Responder {
     let db = client.database(DB_NAME);
     let collection = db.collection::<Document>("stateConstituency");
@@ -51,6 +53,7 @@ pub async fn get_districts(client: Data<Client>,query: Query<StateQuery>,) -> im
         HttpResponse::NotFound().body("State not found or no data")
     }
 }
+
 #[get("/states-uts")]
 pub async fn get_state(client: Data<Client>) -> impl Responder {
     let db = client.database(DB_NAME);
@@ -73,4 +76,49 @@ pub async fn get_state(client: Data<Client>) -> impl Responder {
     HttpResponse::Ok().json(states)
 }
 
-#[get["national/Constituency"]]
+#[get("/national/states")]
+pub async fn get_national_states(client:Data<Client>) -> impl Responder {
+    let db = client.database(DB_NAME);
+    let collection = db.collection::<Document>("nationalConstituency");
+   let states = collection.distinct("state",doc! {}).await;
+    match states {
+        Ok(states) => {
+            let state_list: Vec<String> = states
+                .into_iter()
+                .filter_map(|state| state.as_str().map(|s| s.to_string()))
+                .collect();
+            HttpResponse::Ok().json(state_list)
+        }
+        Err(e) => {
+            eprintln!("Error fetching states: {:?}", e);
+            HttpResponse::InternalServerError().body("Failed to fetch states")
+        }
+    }
+}
+#[derive(Serialize, Deserialize, Debug)]
+struct Constituency {
+    constituency: Vec<String>,
+    state: String,
+}
+
+#[get("/national/constituency")]
+pub async fn get_national_constituency(client: Data<Client>,query: Query<StateQuery>) -> impl Responder {
+    let db = client.database(DB_NAME);
+    let collection = db.collection::<Constituency>("nationalConstituency");
+    println!("Querying for state: {}", query.state);
+    match collection.find_one( doc! { "state": &query.state }).await{
+        Ok(cursor) => {
+            println!("Query result: {:?}", cursor);
+            let data = cursor.unwrap();
+            return HttpResponse::Ok().json(json!({
+                "constituency": data.constituency,
+                "state": data.state
+            }));
+
+        }
+        Err(e) => {
+            eprintln!("Error fetching constituency: {:?}", e);
+            return HttpResponse::InternalServerError().body("Failed to fetch constituency");
+        }
+    }
+}

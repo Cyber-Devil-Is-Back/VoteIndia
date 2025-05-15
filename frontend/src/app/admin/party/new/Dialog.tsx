@@ -98,7 +98,7 @@ function PartyDialog({ open,onClose, party }: PartyDialogProps) {
                             <Typography>{party.party_type}</Typography>
                         </Box>
                         <Box>
-                            <Typography variant="subtitle2" color="textSecondary">    Status </Typography>
+                            <Typography variant="subtitle2" color="textSecondary">   Status </Typography>
                             <Chip  icon={<HourglassTopIcon fontSize="small" />}  label="Pending"  color="info"  size="small"  variant="outlined"  sx={{ fontWeight: 'bold' }}  />
                         </Box>
                         <Box>
@@ -152,8 +152,7 @@ function PartyDialog({ open,onClose, party }: PartyDialogProps) {
                             <Typography>{party.phone_number}</Typography>
                         </Box>
                         <Box>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Website</Typography>
+                            <Typography variant="subtitle2" color="textSecondary"> Website</Typography>
                             <Typography>
                                 <a href={party.party_website} target="_blank" rel="noopener noreferrer">
                                     {party.party_website}

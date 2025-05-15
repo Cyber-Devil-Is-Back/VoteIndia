@@ -85,6 +85,7 @@ pub struct PartyLogin {
     pub party_email: String,
     pub party_password: String,
     pub party_type: PartyType,
+    pub state: Option<String>,
     pub status: PartyStatus,
 }
 #[derive(Serialize,Deserialize)]
@@ -154,6 +155,7 @@ pub struct RegisterNationalCandidate{
 }
 #[derive(Serialize,Deserialize)]
 pub struct NationalCandidate{
+    pub id: i64,
     pub party_id: String,
     pub name: String,
     pub gender: String,
@@ -163,8 +165,11 @@ pub struct NationalCandidate{
     pub constituency: String,
     pub status: PartyStatus,
 }
+
+
 #[derive(Deserialize,Debug)]
 pub struct Status {
     pub id: u64,
     pub status: PartyStatus,
+    pub reason: Option<String>,
 }

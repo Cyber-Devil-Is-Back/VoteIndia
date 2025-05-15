@@ -29,13 +29,19 @@ pub async  fn login_party(client: Data<Client>, form: Json<Login>) -> impl Respo
             println!("password {}",form.0.party_password);
             if verify_password(&party.party_password,&form.party_password){
                 if party.status == PartyStatus::Pending{
-                    return HttpResponse::Ok().json(json!({"message":"Approval Pending","party_id":party._id,"status":"Pending"}));
+                    return HttpResponse::Ok().json(json!({"status":party.status,"party_id":party._id,"status":"Pending"}));
                 }
                 else if party.status == PartyStatus::Rejected {
-                    return HttpResponse::Ok().json(json!({"message":"Party is rejected"}));
+                    return HttpResponse::Ok().json(json!({"status":party.status}));
                 }
                 else {
-                    return HttpResponse::Ok().json(json!({"message":"Success","party_id":party._id,"party_type":party.party_type}));
+                    if party.party_type == PartyType::State{
+                        return HttpResponse::Ok().json(json!({"status":party.status,"party_id":party._id,"party_type":party.party_type,"state":party.state.unwrap()}));
+                    }
+                    else {
+                        return HttpResponse::Ok().json(json!({"status":party.status,"party_id":party._id,"party_type":party.party_type}));
+                    }
+                    
                 }
             } else {
                 return HttpResponse::Unauthorized().json(json!({"message":"Invalid credentials"}));
@@ -67,7 +73,7 @@ pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyF
 
     // Validate the form data
     if form.party_name.is_empty()|| form.party_abbreviation.is_empty()|| form.party_slogan.is_empty()|| form.registration_date.is_empty()|| form.party_description.is_empty()
-        || form.party_type.is_empty()|| form.party_email.is_empty()|| form.party_password.is_empty()|| form.party_website.is_empty()|| form.phone_number.is_empty()
+        || form.party_type.is_empty()|| form.party_email.is_empty()|| form.party_password.is_empty()|| form.phone_number.is_empty()
         || form.party_leader.is_empty()|| form.party_founder.is_empty()|| form.party_manifesto.is_empty()
     {
         if form.0.party_type.parse::<PartyType>().map_err(|_| HttpResponse::BadRequest().json("Invalid party type")).unwrap() == PartyType::State && form.0.state.is_empty() {
@@ -100,17 +106,15 @@ pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyF
     std::io::copy(&mut form.0.party_logo.file, &mut party_logo_file).unwrap();
     std::io::copy(&mut form.0.leader_image.file, &mut leader_image_file).unwrap();
 
-
-    let last_party = collection
-        .find_one(doc! {})
-        .sort(doc! { "_id": -1 })
-        .await
-        .unwrap_or(None);
-    let last_id = match last_party {
-        Some(party) => party._id + 1,
-        None => 1, // If no documents are found, start with ID 1
-    };
-    println!("this is last id {:?}",last_id);
+    
+    let last_party = collection.count_documents(doc! {}).await;
+    println!("this is last party {:?}",last_party); 
+    let last_id:i64=last_party.unwrap() as i64 + 1 ;
+    // let last_id = match last_party {
+    //     Some(party) => party._id + 1,
+    //     None => 1, // If no documents are found, start with ID 1
+    // };
+    // println!("this is last id {:?}",last_id);
     // Create a new Party instance 
     let state_party = Party {
         name: form.0.party_name.into_inner(), party_abbreviation: form.0.party_abbreviation.into_inner(), party_slogan: form.0.party_slogan.into_inner(),
@@ -122,6 +126,7 @@ pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyF
     };
     let result = collection.insert_one(state_party).await;
     if let Err(e) = result {
+        println!("Failed to insert party: {}", e);
         return HttpResponse::InternalServerError().json(format!("Failed to register state party: {}", e));
     }
   
@@ -159,7 +164,7 @@ pub async fn update_status(client:Data<Client>,web3:Data<Web3<Http>>,form:Json<S
             ).await;
             let result = collection.update_one(doc! { "_id": form.id as i64 },
                 doc! { "$set": { "status": "Approved" }, "$unset": {"name": "","party_abbreviation": "","party_slogan": "","registration_on": "", 
-                "party_description": "","party_manifesto": "","party_logo": "", "state": "" 
+                "party_description": "","party_manifesto": "","party_logo": "", 
                 } }).await;
             match result {
                     Ok(update_result) => {
@@ -202,8 +207,6 @@ pub async fn get_state_party_by_name(client:Data<Client>, web3:Data<Web3<Http>>,
         }
     }
 }
-
-
 
 #[get("/get_party_by_id/{id}")]
 pub async fn get_state_party_by_id(web3: Data<Web3<Http>>, id: web::Path<i64>) -> impl Responder {
