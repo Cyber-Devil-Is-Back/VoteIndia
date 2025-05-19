@@ -1,6 +1,6 @@
 import DataGridComp from "@/components/DataGrid";
 import {  HourglassTop as HourglassTopIcon, CheckCircle, Cancel } from "@mui/icons-material";
-import { Avatar, Box, Button, Chip, Typography } from "@mui/material";
+import { Avatar, Box, Button, Chip, Tooltip, Typography } from "@mui/material";
 import { getGridSingleSelectOperators, GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
 import AddDialog from "./AddDialog";
@@ -24,9 +24,23 @@ export default function NationalCandidatesLayout() {
     const [rows, setRows] = useState<GridRowsProp>([]);
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
+    const [selectedCandidates, setSelectedCandidates] = useState({
+        id: 0,
+        party_id: 0,
+        name: '',
+        gender:'',
+        image: '',
+        dob: '',
+        state: '',
+        constituency: '',
+        status: '',
+        reason: '',
+
+    });
 
     const handleClose = () => {
         setOpen(false);
+        loadCandidates();
     }
     const columns :GridColDef[] = [
         { field: 'id', headerName: 'ID', width: 90 },
@@ -41,9 +55,25 @@ export default function NationalCandidatesLayout() {
         { field: 'dob', headerName: 'Date Of Birth', width: 150 },
         { field: 'state', headerName: 'State', width: 260 },
         { field: 'constituency', headerName: 'Constituency', width: 250 },
-        {field : 'status', headerName: 'Status', width: 200,type: 'singleSelect' ,valueOptions: statusOptions,filterOperators: getGridSingleSelectOperators(),
-            renderCell: (params) => ( (params.value === 'Pending') ? <Pending /> : (params.value === 'Approved') ? <Approved /> : <Rejected />),
-        },
+         { field: 'status', headerName: 'Status', width: 200, type: 'singleSelect',renderCell: (params) => {
+            const status = params.value;
+            if (status === 'Rejected') {
+              return (
+                <Tooltip title={params.row.reason} arrow>
+                    <Chip   icon={<Cancel fontSize="small" />}   label="Rejected"   color="error"   size="small"   variant="outlined"   sx={{ fontWeight: 'bold' }} />
+                </Tooltip>
+              );
+            } else if (status === 'Approved') {
+              return (
+                <Chip icon={<CheckCircle fontSize="small" />} label="Approved" color="success" size="small" variant="outlined" sx={{ fontWeight: 'bold' }} />
+              );
+            } else {
+              return (
+                <Chip icon={<HourglassTopIcon fontSize="small" />} label="Pending" color="info" size="small" variant="outlined" sx={{ fontWeight: 'bold' }} />
+              );
+            }
+          }
+        }
     ]
     const loadCandidates = async () => {
         setLoading(true);
@@ -63,6 +93,10 @@ export default function NationalCandidatesLayout() {
     useEffect(() => {
         loadCandidates();
     }, []);
+
+    const handleRowClick = (params: any) => {
+        console.log(params.row);
+    };
 
     return (
         <Box width="100%" height="100%" py={3} display='flex' flexDirection='column' gap={2} >

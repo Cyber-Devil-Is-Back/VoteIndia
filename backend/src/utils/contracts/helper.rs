@@ -48,11 +48,12 @@ pub fn load_contract(contract_address: String,contract_abi_path: String, web3: W
     Ok(contract)
 }
 
+#[allow(dead_code)]
 pub fn load_key() -> SecretKey{
     let _pkey = std::env::var("PRIVATE_KEY").expect("PRIVATE_KEY must be set");
     SecretKey::from_str(&_pkey).unwrap()
 }
-
+#[allow(dead_code)]
 pub async fn upload(path: &Path) -> Result<String, Error> {
        
     let client = IpfsClient::default(); 

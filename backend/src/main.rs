@@ -1,11 +1,10 @@
-use std::{env, sync::Arc};
+use std::env;
 
 use actix_cors::Cors;
 use actix_files::Files;
 use actix_web::{http, web::{self, Data}, App, HttpServer};
 use dotenv::dotenv;
 use mongodb::Client;
-use utils::contracts::swarajtoken::SwarajToken;
 use web3::{transports::Http, Web3};
 
 mod routes;

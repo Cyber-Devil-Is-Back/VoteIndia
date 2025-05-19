@@ -25,6 +25,7 @@ pub fn generate_token(id: i64) -> Result<String, jsonwebtoken::errors::Error> {
     encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref()))
 }
 
+#[allow(dead_code)]
 pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     let token_data = decode::<Claims>(

@@ -11,13 +11,15 @@ interface Candidate{
     party_id:number,
     dob:string,
     state:string,
+    district:string | null,
     constituency:string,
     status:string,
 }
 
 interface CandidateProps {
-    data: Candidate | null;
+    data: Record<string,string|number>;
     open: boolean;
+    updateLink: string;
     setOpenDialog: React.Dispatch<React.SetStateAction<boolean>>;
 }
 export default function Dialoge(props: CandidateProps) {
@@ -51,13 +53,13 @@ export default function Dialoge(props: CandidateProps) {
     }, [props.open]);
 
     const handleReject = async () => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/national/candidate/update_status/`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${props.updateLink}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                id: props.data?.id,
+                id: props.data['Candidate ID'],
                 status: "Rejected",
                 reason: resaon
             }),
@@ -71,13 +73,13 @@ export default function Dialoge(props: CandidateProps) {
         }
     }
     const handleApprove = async () => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/national/candidate/update_status/`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${props.updateLink}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                id: props.data?.id,
+                id: props.data['Candidate ID'],
                 status: "Approved",
             }),
         });
@@ -89,8 +91,6 @@ export default function Dialoge(props: CandidateProps) {
             console.log(error);
         }
     }
-
-
     return(
         <Box>
             <Dialog open={props.open}  fullWidth >
@@ -103,36 +103,20 @@ export default function Dialoge(props: CandidateProps) {
                 <DialogContent>
                     <Box display='flex' justifyContent='space-between' alignItems='center' py={5} >
                         <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${party.party_image}`} alt="Party Image" variant="rounded" style={{ width: '150px', height: '150px' }} />
-                        <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${props.data?.image}`} alt="Candidate Image" variant="rounded" style={{ width: '150px', height: '150px' }} />
+                        <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${props.data['Candidate Image']}`} alt="Candidate Image" variant="rounded" style={{ width: '150px', height: '150px' }} />
                     </Box>
-                    <Box display='flex' gap={4} justifyContent={'space-between'} py={2} >
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > Candidate ID: </Typography>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > {props.data?.id} </Typography>
-                    </Box>
-                    <Box display='flex' gap={4} justifyContent={'space-between'} py={2}>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > Candidate Name: </Typography>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > {props.data?.name} </Typography>
-                    </Box>
-                    <Box display='flex' gap={4} justifyContent={'space-between'} py={2}>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > Candidate Gender: </Typography>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > {props.data?.gender} </Typography>
-                    </Box>
-                    <Box display='flex' gap={4} justifyContent={'space-between'} py={2}>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > Candidate Date Of Birth: </Typography>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > {props.data?.dob} </Typography>
-                    </Box>
-                    <Box display='flex' gap={4} justifyContent={'space-between'} py={2}>
+                     <Box display='flex' gap={4} justifyContent={'space-between'} py={2}>
                         <Typography variant="body1" fontWeight={500} color='text.secondary' > Party Name: </Typography>
                         <Typography variant="body1" fontWeight={500} color='text.secondary' > {party.party_name} </Typography>
                     </Box>
-                    <Box display='flex' gap={4} justifyContent={'space-between'} py={2}>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > Candidate Election State: </Typography>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > {props.data?.state} </Typography>
-                    </Box>
-                    <Box display='flex' gap={4} justifyContent={'space-between'} py={2}>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > Candidate Election Consstutiency: </Typography>
-                        <Typography variant="body1" fontWeight={500} color='text.secondary' > {props.data?.constituency} </Typography>
-                    </Box>
+                    {Object.entries(props.data)
+                        .filter(([key, value]) => key !== "Candidate Image" && key !== "party_id" && value !== null && value !== undefined && value !== '' )
+                        .map(([key, value]) => (
+                            <Box key={key} display='flex' gap={4} justifyContent={'space-between'} py={2}>
+                                <Typography variant="body1" fontWeight={500} color='text.secondary'>{key}: </Typography>
+                                <Typography color="text.primary">{value}</Typography>
+                            </Box>
+                    ))}
                 </DialogContent>
                 <DialogActions>
                     <Button variant="outlined" color="error" onClick={() => setOpenDialog(true)} >

@@ -9,6 +9,7 @@ describe("SwarajToken", function () {
         [owner, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
         token = await Token.deploy();
         await token.waitForDeployment();
+        console.log(await token.getAddress());
     });
 
     it("Should have correct name and symbol", async function () {

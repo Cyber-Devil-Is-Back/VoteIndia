@@ -54,7 +54,7 @@ pub async fn get_districts(client: Data<Client>,query: Query<StateQuery>,) -> im
     }
 }
 
-#[get("/states-uts")]
+#[get("/state/states-uts")]
 pub async fn get_state(client: Data<Client>) -> impl Responder {
     let db = client.database(DB_NAME);
     let collection = db.collection::<Document>("stateConstituency");

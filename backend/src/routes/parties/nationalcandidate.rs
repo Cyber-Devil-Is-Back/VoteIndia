@@ -6,6 +6,7 @@ use actix_web::web::Json;
 use actix_web::{post, web::Data, HttpResponse, Responder};
 use futures::StreamExt;
 use mongodb::bson::{doc, Bson, Document};
+use mongodb::options::FindOptions;
 use mongodb::{Client, Collection};
 use serde_json::json;
 
@@ -16,8 +17,8 @@ use super::forms::RegisterNationalCandidate;
 
 #[post("/national/candidate/register")]
 pub async fn register_candidate(client: Data<Client>, mut form: MultipartForm<RegisterNationalCandidate>) -> impl Responder {
-    let client  = client.database("voteIndia");
-    let collection:Collection<NationalCandidate> = client.collection("national_candidates");
+    let database  = client.database("voteIndia");
+    let collection:Collection<NationalCandidate> = database.collection("national_candidates");
     if form.name.is_empty() || form.party_id.is_empty() || form.state.is_empty()|| form.constituency.is_empty() || form.0.image.file_name.is_none() {
         return HttpResponse::BadRequest().json("All fields are required")
     }
@@ -37,10 +38,20 @@ pub async fn register_candidate(client: Data<Client>, mut form: MultipartForm<Re
     let img_path = PathBuf::from(&upload_dir).join(format!("Candidates/{}",format!("{}.{}",uuid::Uuid::new_v4(),ext)));
     let mut file = File::create(&img_path).unwrap();
     std::io::copy(&mut form.0.image.file, &mut file).unwrap();
-    let id  = collection.count_documents(doc! {}).await.unwrap();
-    let id = id + 1;
+    let find_options = FindOptions::builder()
+        .sort(doc! { "id": -1 })
+        .projection(doc! { "id": 1 })
+        .limit(1)
+        .build();
+
+    // Perform the query
+    let mut cursor = client.database("voteIndia").collection::<Document>("national_candidates").find(doc! {}).with_options(find_options).await.unwrap();
+     let last_id = match cursor.next().await {
+        Some(Ok(doc)) => doc.get("id").and_then(|id| id.as_i64()).unwrap_or(0) + 1,
+        _ => 1,
+    };
     let candidate = NationalCandidate {
-        id: id as i64,
+        id: last_id ,
         party_id: form.0.party_id.clone(),
         name: form.0.name.clone(),
         gender: form.0.gender.clone(),
@@ -116,14 +127,17 @@ pub async fn get_all_new_candidates(client: Data<Client>) -> impl Responder {
 #[get("/national/candidate/get_all")]
 pub async fn get_all_candidates(client: Data<Client>) -> impl Responder {
     let client = client.database("voteIndia");
-    let collection: Collection<NationalCandidate> = client.collection("national_candidates");
+    let collection: Collection<Document> = client.collection("national_candidates");
     let candidates = collection.find(doc! {}).await;
     match candidates {
         Ok(mut cursor) => {
-            let mut  candidates :Vec<NationalCandidate> = Vec::new();
+            let mut  candidates :Vec<Document> = Vec::new();
             while let Some(candidate) = cursor.next().await {
                 match candidate {
-                    Ok(party) => candidates.push(party),
+                   Ok(mut party) => {
+                            party.remove("_id"); // Remove the _id key
+                            candidates.push(party);
+                    },
                     Err(e) => return HttpResponse::InternalServerError().json(format!("Failed to fetch state party: {}", e)),
                 }
             }
