@@ -3,7 +3,7 @@ use std::{env, path::PathBuf};
 use actix_multipart::form::MultipartForm;
 use actix_web::{ get, post, put, web::{self, Data, Json}, HttpResponse, Responder};
 use futures::StreamExt;
-use mongodb::{bson::{doc, Bson}, Client};
+use mongodb::{bson::{doc, Bson, Document}, options::FindOptions, Client};
 use serde::Deserialize;
 use serde_json::json;
 use web3::{transports::Http, types::U256, Web3};
@@ -36,6 +36,7 @@ pub async  fn login_party(client: Data<Client>, form: Json<Login>) -> impl Respo
                 }
                 else {
                     if party.party_type == PartyType::State{
+                        println!("this is state {:?}",party.state);
                         return HttpResponse::Ok().json(json!({"status":party.status,"party_id":party._id,"party_type":party.party_type,"state":party.state.unwrap()}));
                     }
                     else {
@@ -106,20 +107,27 @@ pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyF
     std::io::copy(&mut form.0.party_logo.file, &mut party_logo_file).unwrap();
     std::io::copy(&mut form.0.leader_image.file, &mut leader_image_file).unwrap();
 
-    
-    let last_party = collection.count_documents(doc! {}).await;
-    println!("this is last party {:?}",last_party); 
-    let last_id:i64=last_party.unwrap() as i64 + 1 ;
-    // let last_id = match last_party {
-    //     Some(party) => party._id + 1,
-    //     None => 1, // If no documents are found, start with ID 1
-    // };
-    // println!("this is last id {:?}",last_id);
-    // Create a new Party instance 
+
+
+    // Create FindOptions
+    let find_options = FindOptions::builder()
+        .sort(doc! { "_id": -1 })
+        .projection(doc! { "_id": 1 })
+        .limit(1)
+        .build();
+
+    // Perform the query
+    let mut cursor = client.database(DB_NAME).collection::<Document>(COLL_NAME).find(doc! {}).with_options(find_options).await.unwrap();
+    let last_id = match cursor.next().await {
+        Some(Ok(doc)) => doc.get("_id").and_then(|id| id.as_i64()).unwrap_or(0) + 1,
+        _ => 1,
+    };
+   
+ 
     let state_party = Party {
         name: form.0.party_name.into_inner(), party_abbreviation: form.0.party_abbreviation.into_inner(), party_slogan: form.0.party_slogan.into_inner(),
         registration_on: form.0.registration_date.into_inner(), party_description: form.0.party_description.into_inner(), party_type: form.0.party_type.into_inner().parse::<PartyType>().map_err(|_| HttpResponse::BadRequest().json("Invalid party type")).unwrap(),
-        party_email: form.0.party_email.into_inner(), party_password: hash_password(form.0.party_password.into_inner()), party_website: form.0.party_website.into_inner(),
+        party_email: form.0.party_email.into_inner(), party_password: hash_password(form.0.party_password.into_inner()), party_website: form.0.party_website.unwrap().into_inner(),
         phone_number: form.0.phone_number.into_inner(), party_leader: form.0.party_leader.into_inner(), party_founder: form.0.party_founder.into_inner(),
         party_manifesto: form.0.party_manifesto.into_inner(),state: form.0.state.clone(),party_logo: party_logo_path.to_str().unwrap().to_string(),
         leader_image: leader_image_path.to_str().unwrap().to_string(), status: super::forms::PartyStatus::Pending, _id: last_id, 

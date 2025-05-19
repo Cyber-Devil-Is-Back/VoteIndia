@@ -1,4 +1,3 @@
-use web3::contract::tokens::Tokenizable;
 use web3::contract::{Contract, Error, Options, tokens::Detokenize};
 use web3::ethabi::Token;
 use web3::transports::Http;
@@ -122,7 +121,7 @@ impl PartyRegisterClient {
         let party_data: PartyData = PartyData::from_tokens(result)?;
         Ok(party_data)
     }
-
+    #[allow(dead_code)]
     pub async fn get_all_parties(&self) -> Result<Vec<PartyData>, Error> {
         let result: Vec<Vec<Token>> = self.contract.query("getAllParties", (), None, Options::default(), None).await?;
         let parties: Vec<PartyData> = result.into_iter().map(|token| PartyData::from_tokens(token)).collect::<Result<Vec<_>, _>>()?;
@@ -133,9 +132,28 @@ impl PartyRegisterClient {
         let parties: Vec<PartyData> = result.into_iter().map(|token| PartyData::from_tokens(token)).collect::<Result<Vec<_>, _>>()?;
         Ok(parties)
     }
-    pub async fn get_all_parties_by_type(&self, party_type: u8) -> Result<Vec<PartyData>, Error> {
-        let result: Vec<Vec<Token>> = self.contract.query("getAllPartiesByType", (party_type,), None, Options::default(), None).await?;
-        let parties: Vec<PartyData> = result.into_iter().map(|token| PartyData::from_tokens(token)).collect::<Result<Vec<_>, _>>()?;
-        Ok(parties)
+   pub async fn get_all_parties_by_type(&self, party_type: u8) -> Result<Vec<PartyData>, Error> {
+    let result: Token = self
+        .contract
+        .query("getAllPartiesByType", (party_type,), None, Options::default(), None)
+        .await?;
+
+        match result {
+            Token::Array(array) => {
+                let parties = array
+                    .into_iter()
+                    .map(|token| {
+                        if let Token::Tuple(inner) = token {
+                            PartyData::from_tokens(inner)
+                        } else {
+                            Err(Error::InvalidOutputType("Expected Tuple in Array".to_string()))
+                        }
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(parties)
+            }
+            _ => Err(Error::InvalidOutputType("Expected Array of Tuples".to_string())),
+        }
     }
+
 }

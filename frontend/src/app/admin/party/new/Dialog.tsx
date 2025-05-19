@@ -175,7 +175,7 @@ function PartyDialog({ open,onClose, party }: PartyDialogProps) {
                 </Box>
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClick } color="error" variant="outlined">
+                <Button onClick={handleClick } color="error" variant="outlined" loading={loading} >
                     Reject
                 </Button>
                 <Button onClick={handleClick } color="primary" loading={loading} variant="contained">

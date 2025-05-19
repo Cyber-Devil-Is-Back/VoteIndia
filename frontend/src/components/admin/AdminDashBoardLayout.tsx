@@ -5,7 +5,11 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import React from "react";
 import { MenuItem } from "../DashBoard/MenuList";
-
+import BallotIcon from '@mui/icons-material/Ballot';
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import PublicIcon from '@mui/icons-material/Public';
+import PersonIcon from '@mui/icons-material/Person';
+import Diversity1Icon from '@mui/icons-material/Diversity1';
 import AppBar from "../DashBoard/AppBar";
 import SideBar from "../DashBoard/Sidebar";
 import BaseLayout from "../DashBoard/BaseLayout";
@@ -14,28 +18,28 @@ import { PeopleAlt} from "@mui/icons-material";
 const menuList: MenuItem[] = [
   { type: 'menuitem', name: "Dashboard", icon: <DashboardIcon />, link: "/admin/dashboard" },
   { type: 'divider' },
-  { type: 'menuitem', name: "Voters", icon: <PeopleAlt />, link: "/admin/voters" },
-  { type: 'menuitem', name: "New Party", icon: <PeopleAlt />, link: "/admin/party/new" },
+  { type: 'menuitem', name: "Voters", icon:  <Diversity1Icon />, link: "/admin/voters" },
+  { type: 'menuitem', name: "New Party", icon:<PeopleAlt /> , link: "/admin/party/new" },
   {
     type: 'menuitem',
     name: "Candidates",
-    icon: <ShoppingCartIcon />,
+    icon: <PersonIcon />,
     link: "#", // can be "#" or omitted if not directly navigable
     children: [
       {
         name: "State",
-        icon: <ShoppingCartIcon />,
+        icon: <LocationCityIcon />,
         link: "/admin/candidates/new/state"
       },
       {
         name: "National",
-        icon: <ShoppingCartIcon />,
+        icon: <PublicIcon />,
         link: "/admin/candidates/new/national"
       }
     ]
   },
   { type: 'divider' },
-  { type: 'menuitem', name: "Orders", icon: <ShoppingCartIcon />, link: "/orders" },
+  { type: 'menuitem', name: "Election", icon: <BallotIcon />, link: "/admin/election" },
   { type: 'menuitem', name: "Dashboard", icon: <ShoppingCartIcon />, link: "/orders" }
 ];
 

@@ -31,9 +31,13 @@ export default function PartyLogin() {
       const data = await response.json();
 
       if (response.ok) {
+        console.log(data)
         sessionStorage.setItem("partyId", data.party_id);
         sessionStorage.setItem("status", data.status);
         sessionStorage.setItem("partyType", data.party_type);
+        if (data.party_type === "State") {
+          sessionStorage.setItem("stateId", data.state);
+        }
         setLoginError(null); 
         router.push("/party/dashboard");
       } else {
