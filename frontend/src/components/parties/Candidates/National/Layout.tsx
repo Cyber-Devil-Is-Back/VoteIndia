@@ -1,42 +1,17 @@
 import DataGridComp from "@/components/DataGrid";
 import {  HourglassTop as HourglassTopIcon, CheckCircle, Cancel } from "@mui/icons-material";
 import { Avatar, Box, Button, Chip, Tooltip, Typography } from "@mui/material";
-import { getGridSingleSelectOperators, GridColDef, GridRowsProp } from "@mui/x-data-grid";
+import {GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
 import AddDialog from "./AddDialog";
 
-const statusOptions = ['Active', 'Inactive', 'Pending'];
 
-const Pending = () => (
-    <Chip icon={<HourglassTopIcon fontSize="small" />} label="Pending"  color="info"  size="small"  variant="outlined"  sx={{ fontWeight: 'bold' }} />
-)
-const Approved = () => (
-    <Chip icon={<CheckCircle fontSize="small" />} label="Approved" color="success" size="small" variant="outlined" sx={{ fontWeight: 'bold' }} />
-  );
-  
-  const Rejected = () => ( 
-    <Chip icon={<Cancel fontSize="small" />} label="Rejected" color="error" size="small" variant="outlined" sx={{ fontWeight: 'bold' }} />
-  );
-  
 
 
 export default function NationalCandidatesLayout() {
     const [rows, setRows] = useState<GridRowsProp>([]);
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
-    const [selectedCandidates, setSelectedCandidates] = useState({
-        id: 0,
-        party_id: 0,
-        name: '',
-        gender:'',
-        image: '',
-        dob: '',
-        state: '',
-        constituency: '',
-        status: '',
-        reason: '',
-
-    });
 
     const handleClose = () => {
         setOpen(false);
@@ -94,9 +69,9 @@ export default function NationalCandidatesLayout() {
         loadCandidates();
     }, []);
 
-    const handleRowClick = (params: any) => {
-        console.log(params.row);
-    };
+    // const handleRowClick = (params: any) => {
+    //     console.log(params.row);
+    // };
 
     return (
         <Box width="100%" height="100%" py={3} display='flex' flexDirection='column' gap={2} >

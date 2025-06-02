@@ -20,7 +20,7 @@ const columns: GridColDef[] = [
   { field: 'state', headerName: 'State', width: 200 },
   { field: 'district', headerName: 'District', width: 250 },
   { field: 'constituency', headerName: 'Constituency', width: 300 },
-  { field: 'status', headerName: 'Status', width: 200, type: 'singleSelect',renderCell: (params) => (
+  { field: 'status', headerName: 'Status', width: 200, type: 'singleSelect',renderCell: () => (
         <Chip icon={<HourglassTopIcon fontSize="small" />} label="Pending"  color="info"  size="small"  variant="outlined"  sx={{ fontWeight: 'bold' }} /> 
     ) },
 ];

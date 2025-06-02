@@ -3,7 +3,7 @@ import AdminDashBoardLayout from "@/components/admin/AdminDashBoardLayout";
 import DataGridComp from "@/components/DataGrid";
 import { Avatar, Box, Chip, Typography } from "@mui/material";
 import HourglassTopIcon from "@mui/icons-material/HourglassTop";
-import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
+import { GridColDef, GridRowParams, GridRowsProp } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
 import PartyDialog from "./Dialog";
 
@@ -79,7 +79,7 @@ export default function NewParty() {
     fetchData();
   }, [dialogOpen]);
 
-  const handleRowClick = (params: any) => {
+  const handleRowClick = (params: GridRowParams) => {
     setSelectedParty(params.row as PartyReturn);
     setDialogOpen(true);
   };
@@ -103,17 +103,14 @@ export default function NewParty() {
             columns={columns}
             loading={loading}
             dataGridProps={{
-              onRowClick:handleRowClick
-            }}
+            onRowClick: handleRowClick,
+            getRowHeight: () => 120, // <-- Set row height in pixels
+          }}
            
           />
         </Box>
       </Box>
-      <PartyDialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        party={selectedParty}
-      />
+      <PartyDialog open={dialogOpen} onClose={handleCloseDialog} party={selectedParty}/>
     </AdminDashBoardLayout>
   );
 }

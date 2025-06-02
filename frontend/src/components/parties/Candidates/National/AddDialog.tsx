@@ -56,17 +56,27 @@ export default function AddDialog(props: AddDialogProps) {
         }
     }
     React.useEffect(() => {
+         if (props.open && form.state) {
         loadstate();
         setform((prevData) => ({
             ...prevData,
             party_id: sessionStorage.getItem('partyId') || '0',
-        }));    
-    }, []);
+        }));   
+    } 
+    }, [props.open,form.state]);
     React.useEffect(() => {
-        if (form.state) {
-            loadconstituency();
+
+        const run = () => {
+            if (form.state) {
+                loadconstituency();
+                setform((prevData) => ({
+                    ...prevData,
+                    party_id: sessionStorage.getItem("partyId") || '', // Reset constituency when state changes
+                }));
+            }
         }
-    }, [form.state]);
+        run();
+    }, );
 
     const handleadd = () => {
         const formData = new FormData();
@@ -79,7 +89,7 @@ export default function AddDialog(props: AddDialogProps) {
         if (image) {
             formData.append("image", image);
         }
-        const response = fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/national/candidate/register`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/national/candidate/register`, {
             method: 'POST',
             body: formData,
         }).then((response) => {

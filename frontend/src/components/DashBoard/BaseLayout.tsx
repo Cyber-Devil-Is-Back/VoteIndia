@@ -22,10 +22,10 @@ export default function BaseLayout(props:Props){
         }
       };
     return(
-        <Box sx={{bgcolor: "background.default",position: "relative",overflow: "hidden",maxheight: "100vh",maxwidth: "100vw",}} ref={boxRef} onMouseMove={handleMouseMove}>
+        <Box sx={{bgcolor: "background.default",position: "relative",overflow: "hidden",maxheight: "100vh",maxwidth: "100vw",}} ref={boxRef}  onMouseMove={handleMouseMove}>
             <Box className="track-ball" sx={{position: "absolute", top: mousePosition.y - 50, left: mousePosition.x - 50,}} />
-            <Box sx={{minWidth:'100vw',minHeight:'100vh',bgcolor:'transparent',zIndex:100}} position='relative' display='flex' >
-                {props.children}
+            <Box sx={{minWidth:'100vw',minHeight:'100vh',zIndex:100}} position='relative' bgcolor={"transparent"}  display='flex' >
+            {props.children}
             </Box>
       </Box>
     );

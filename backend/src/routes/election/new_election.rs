@@ -1,47 +1,86 @@
-use std::process::{Command, Stdio};
 
-use actix_web::{post, HttpResponse, Responder};
-use regex::Regex;
+use std::time::{SystemTime, UNIX_EPOCH};
+use actix_web::{get, post, web::{Data, Json}, HttpResponse, Responder};
+use chrono::{Datelike, Utc};
+use futures::StreamExt;
+use mongodb::{bson::doc, Client};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use crate::routes::election::{create_election, Electiondata};
+use super::ElectionType;
 
 
-#[post("/election/deploy")]
-pub async fn deploy_election() -> impl Responder {
-     let workspace_dir = "/workspaces/VoteIndia/blockchain";
+const DB_NAME: &str = "voteIndia";
+const COLL_NAME:&str = "election";
 
-    // Start `yes` process
-    let yes_process = Command::new("yes")
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to start `yes`");
-
-    // Run Hardhat Ignition deploy and capture output
-    let output = Command::new("npx")
-        .arg("hardhat")
-        .arg("ignition")
-        .arg("deploy")
-        .arg("ignition/modules/deploy.js")
-        .arg("--network")
-        .arg("geth")
-        .arg("--reset")
-        .current_dir(workspace_dir)
-        .stdin(yes_process.stdout.unwrap())
-        .output()
-        .expect("Failed to run Hardhat deploy");
-
-    let stdout = String::from_utf8(output.stdout)
-        .expect("Output not valid UTF-8");
-    println!("🔧 Raw Output:\n{}", stdout);
-
-    // Match lines like: ModuleName#ContractName - 0xAddress
-    let re = Regex::new(r#"(\w+)#(\w+)\s+-\s+(0x[a-fA-F0-9]{40})"#).unwrap();
-
-    println!("\n✅ Deployed Contracts:");
-    for cap in re.captures_iter(&stdout) {
-        let module_name = &cap[1];
-        let contract_name = &cap[2];
-        let address = &cap[3];
-        println!("- {}#{} deployed at {}", module_name, contract_name, address);
+#[derive(Serialize,Deserialize,Clone)]
+struct Election{
+    pub election_type:ElectionType,
+    pub state:Option<String>
+}
+#[post("/deploy")]
+pub async fn deploy_election(mongodb:Data<Client>,election: Json<Election>) -> impl Responder {
+    let current_timestamp  = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .expect("Time went backwards")
+    .as_secs() as i64; // Convert to milliseconds
+    let state_clone = election.0.state.clone();
+    let address = create_election(election.0.election_type.clone(), state_clone, current_timestamp).unwrap();
+    let collection = mongodb.database(DB_NAME).collection::<Electiondata>(COLL_NAME);
+    let now  = Utc::now();
+    let future_date = now.with_year( now.year() + 5).expect("Filed to parsed date").signed_duration_since(now).num_seconds();
+    let election_data = match election.0.election_type.clone() {
+        ElectionType::LokSabha => Electiondata {
+            address: address,
+            etype: election.0.election_type,
+            state: None,
+            date: now.timestamp(),
+            next_date: future_date ,
+        },
+        ElectionType::VidhanSabha => Electiondata {
+            address: address,
+            etype: election.0.election_type,
+            state: election.0.state.clone(),
+            date: now.timestamp(),
+            next_date: future_date ,
+        }
+    } ;
+    let result = collection.insert_one(election_data).await;
+    match result {
+        Ok(_) => {
+           return  HttpResponse::Ok().json(json!({"message":"Election data inserted successfully"}));
+        }
+        Err(e) => {
+            println!("Error inserting election data: {}", e);
+            return  HttpResponse::InternalServerError().json(json!({"error": "Failed to insert election data"}));
+        }
     }
+}
 
-    HttpResponse::Ok().body(stdout)
+#[derive(Serialize,Deserialize)]
+struct ElectionTime{
+    pub election_type:ElectionType,
+    pub state:Option<String>
+}
+#[get("/timeLeft")]
+pub async fn get_time_left(mongodb:Data<Client>,data:Json<ElectionTime>)-> impl Responder{
+    let collection = mongodb.database(DB_NAME).collection::<Electiondata>(COLL_NAME);
+    let filter = match data.0.election_type.clone() {
+        ElectionType::LokSabha => doc! { "etype": "LokSabha" },
+        ElectionType::VidhanSabha => doc! { "etype": "VidhanSabha", "state": data.state.clone() },
+    };
+    let mut election_data = collection.find(filter).sort(doc! { "date": -1 }).limit(1).await.unwrap();
+    let data = election_data.next().await.unwrap().unwrap(); 
+
+    HttpResponse::Ok().json(json!({"previous_time":data.date - data.next_date }))
+}
+
+#[post("/register_candidates")]
+pub async fn register_candidates()-> impl Responder{
+    HttpResponse::Ok().json("pewkvpek")
+}
+
+#[post("/election")]
+pub async fn deploy()-> impl Responder{
+    HttpResponse::Ok().json("pewkvpek")
 }

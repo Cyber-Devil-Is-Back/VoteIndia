@@ -69,7 +69,7 @@ export default function AddDialoge(props: AddDialogProps) {
         if (props.open && form.state) {
             loadconstituency();
         }
-    }, [props.open, form.state]);
+    },);
 
     const handleadd = () => {
         const formData = new FormData();
@@ -83,7 +83,7 @@ export default function AddDialoge(props: AddDialogProps) {
         if (image) {
             formData.append("image", image);
         }
-        const response = fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/state/candidate/register`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/state/candidate/register`, {
             method: 'POST',
             body: formData,
         }).then((response) => {

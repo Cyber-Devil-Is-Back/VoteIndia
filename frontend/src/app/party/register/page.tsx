@@ -100,7 +100,7 @@ export default function Register(){
     }
   
     setLoading(true);
-    let response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/register`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/register`, {
       method: 'POST',
       body: formdata,
     })

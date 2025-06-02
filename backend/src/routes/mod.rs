@@ -6,6 +6,7 @@ mod election;
 
 
 use actix_web::web;
+use election::nomimations;
 // use crate::middlewares::auth::Auth; // Import the AuthMiddleware
 
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
@@ -46,6 +47,14 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
                 .service(parties::statecandidates::get_all_new_candidates)
                 .service(parties::statecandidates::register_candidate)
                 .service(parties::statecandidates::update_candidate_status)
+                .service(parties::statecandidates::get_election_candidate)
+        )
+        .service(
+            web::scope("/election")
+                .service(election::nomimations::submit_nominations)
+                .service(election::nomimations::get_nominations)
+                .service(election::nomimations::finalize_nominations)
+               
         )
         .service(
                 web::scope("/admin")
@@ -54,5 +63,10 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
                 .service(admin::routes::update)
                 .service(admin::routes::get_all_admin)
                 .service(admin::routes::delete)
+                .service(web::scope("/election")
+                        .service(election::new_election::deploy_election)
+                        .service(election::new_election::deploy)
+                
+                )
         );
 }

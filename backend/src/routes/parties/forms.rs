@@ -131,20 +131,6 @@ pub struct RegisterStateCandidate{
     pub district: Text<String>,
     pub constituency: Text<String>,
 }
-#[derive(Serialize,Deserialize)]
-pub struct StateCandidate{
-    pub id: i64,
-    pub party_id: String,
-    pub name: String,
-    pub gender: String,
-    pub image: String,
-    pub dob: String,
-    pub state: String,
-    pub district: String,
-    pub constituency: String,
-    pub status: PartyStatus,
-    
-}
 #[derive(MultipartForm)]
 pub struct RegisterNationalCandidate{
     pub party_id: Text<String>,
@@ -175,3 +161,28 @@ pub struct Status {
     pub status: PartyStatus,
     pub reason: Option<String>,
 }
+#[derive(Serialize,Deserialize,Debug)]
+pub struct StateCandidate{
+    pub id: i64,
+    pub party_id: String,
+    pub name: String,
+    pub gender: String,
+    pub image: String,
+    pub dob: String,
+    pub state: String,
+    pub district: String,
+    pub constituency: String,
+    pub status: PartyStatus,
+    
+}
+#[derive(Serialize,Deserialize,Debug)]
+pub struct ElectionStateCandidate{
+    pub id: i64,
+    pub party_id: String,
+    pub name: String,
+    pub image: String,
+    pub state: String,
+    pub district: String,
+    pub constituency: String,
+}
+

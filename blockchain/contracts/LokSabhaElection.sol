@@ -2,172 +2,143 @@
 pragma solidity ^0.8.28;
 
 interface ISwarajToken {
-    function balanceOf(address account) external view returns (uint256);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    function decimals() external view returns (uint8);
-    function allowance(address owner, address spender) external view returns (uint256);
+function balanceOf(address account) external view returns (uint256);
+function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+function decimals() external view returns (uint8);
+function allowance(address user, address spender) external view returns (uint256);
 }
 
-
 contract LokSabhaElection {
+    ISwarajToken public token;
+    uint256 public voteCost = 1 * 10 ** 18; // 1 token = 1 vote
+    address public admin;
+    uint256 public electiondate;
+    uint256 public candidatesRegistrationEndDate;
+    uint256 public votingEndDate;
 
-    address public owner;
-    uint256 public electionId;
-    uint256 public electionStartTime;
-    uint256 public registrationDeadline;
-    uint256 public votingDeadline;
-    ISwarajToken public swarajToken;
-
-
-    struct CandidateInfo {
-        uint256 id;
-        uint256 votes;
-    }
-
-    struct ConstituencyInfo {
-        string name;
-        CandidateInfo[] candidates;
-    }
-
-    struct StateInfo {
-        string name;
-        ConstituencyInfo[] constituencies;
-    }
 
     struct Candidate {
         uint256 id;
-        uint256 votes;
+        uint256 voteCount;
     }
 
     struct Constituency {
-        mapping(uint256 => Candidate) candidates;
-        uint256[] candidateIds;
         string name;
+        Candidate[] candidates;
+        mapping(uint256 => uint256) candidateIndex; // candidateId => index + 1
     }
 
     struct State {
-        mapping(string => Constituency) constituencies;
-        string[] constituencyList;
         string name;
+        mapping(string => Constituency) constituencies;
+        string[] constituencyNames;
+        mapping(string => bool) constituencyExists;
     }
-    
 
     mapping(string => State) private states;
+    string[] public stateNames;
+    mapping(string => bool) private stateExists;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only the contract owner can call this function");
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Not authorized");
         _;
     }
 
-    modifier onlyAfterVotingStart() {
-        require(block.timestamp > registrationDeadline, "Voting has not started yet");
+    constructor(address _tokenAddress,uint256 _date) {
+        token = ISwarajToken(_tokenAddress);
+        admin = msg.sender;
+        electiondate = _date; 
+    
+    }
+    modifier votingEndDatePassed() {
+        require(block.timestamp > votingEndDate, "Voting period is not over");
         _;
     }
 
-    modifier onlyBeforeRegistrationDeadline() {
-        require(block.timestamp < registrationDeadline, "Registration deadline has passed");
-        _;
-    }
-
-    constructor( uint256 _electionId, address _swarajToken) {
-        require(_electionId != 0, "Election ID cannot be zero");
-        require(_swarajToken != address(0), "Invalid token address");
-        owner = msg.sender;
-        electionId = _electionId;
-        electionStartTime = block.timestamp;
-        registrationDeadline = block.timestamp + 7 days; // 7 days for registration
-        votingDeadline = registrationDeadline + 14 days; // 14 days for voting
-        swarajToken = ISwarajToken(_swarajToken);
-        
-    }
-    function addStateWithConstituencies(string memory stateName, string[] memory constituencies) external onlyOwner {
-        require(bytes(stateName).length > 0, "Empty state");
-        require(constituencies.length > 0, "No constituencies");
-
-        State storage s = states[stateName];
-        s.name = stateName;
-
-        for (uint i = 0; i < constituencies.length; i++) {
-            string memory cName = constituencies[i];
-            require(bytes(cName).length > 0, "Empty constituency");
-            s.constituencies[cName].name = cName;
-            s.constituencies[cName].candidateIds.push(0); // dummy init
-        }
-}
-
-
-
-    function registerCandidate( string memory stateName, string memory constituencyName, uint256 candidateId ) public onlyOwner onlyBeforeRegistrationDeadline {
-        require(candidateId != 0, "Candidate ID cannot be zero");
+    function registerCandidate(string memory stateName, string memory constituencyName, uint256 candidateId) public  onlyAdmin {
+        require(stateExists[stateName], "State not found");
+        require(states[stateName].constituencyExists[constituencyName], "Constituency not found");
+        require(candidateId > 0, "Invalid candidate ID");
         State storage state = states[stateName];
-        if (bytes(state.name).length == 0) {
-            state.name = stateName;
-        }
         Constituency storage constituency = state.constituencies[constituencyName];
-        if (bytes(constituency.name).length == 0) {
-            constituency.name = constituencyName;
-            state.constituencyList.push(constituencyName);
-        }
-        Candidate storage candidate = constituency.candidates[candidateId];
-        require(candidate.id == 0, "Candidate already registered");
-        candidate.id = candidateId;
-        candidate.votes = 0;
-        constituency.candidateIds.push(candidateId);
-    }
-    function castVote( string memory stateName, string memory constituencyName, uint256 candidateId) public onlyAfterVotingStart {
-        require(block.timestamp < votingDeadline, "Voting has ended");
+        require(constituency.candidateIndex[candidateId] == 0, "Candidate already exists");
 
-        Candidate storage candidate = states[stateName].constituencies[constituencyName].candidates[candidateId];
-        require(candidate.id != 0, "Candidate not registered");
-
-        candidate.votes++;
+        constituency.candidates.push(Candidate(candidateId, 0));
+        constituency.candidateIndex[candidateId] = constituency.candidates.length; // store index+1
     }
 
-    function getElectionResultsByState(string memory stateName) public view returns (StateInfo memory) {
+    function vote(string memory stateName, string memory constituencyName, uint256 candidateId) public  {
+        require(stateExists[stateName], "State not found");
+        require(states[stateName].constituencyExists[constituencyName], "Constituency not found");
+        require(candidateId > 0, "Invalid candidate ID");
+        require(states[stateName].constituencies[constituencyName].candidateIndex[candidateId] > 0, "Candidate not found");
+        require(token.balanceOf(msg.sender) >= voteCost, "Insufficient token balance");
+
+        // Transfer tokens to the election contract (burn/vault)
+        require(token.transferFrom(msg.sender, address(this), voteCost), "Token transfer failed");
+
         State storage state = states[stateName];
-        uint256 constituencyCount = state.constituencyList.length;
+        Constituency storage constituency = state.constituencies[constituencyName];
 
-        ConstituencyInfo[] memory constituenciesInfo = new ConstituencyInfo[](constituencyCount);
+        uint256 idx = constituency.candidateIndex[candidateId];
+        require(idx > 0, "Candidate not found");
 
-        for (uint256 i = 0; i < constituencyCount; i++) {
-            string memory constName = state.constituencyList[i];
-            Constituency storage constituency = state.constituencies[constName];
+        constituency.candidates[idx - 1].voteCount += 1;
+    }
 
-            uint256 candidateCount = constituency.candidateIds.length;
-            CandidateInfo[] memory candidatesInfo = new CandidateInfo[](candidateCount);
+    // Struct for external return (for Constituency)
+    struct CandidateResult {
+        uint256 id;
+        uint256 voteCount;
+    }
 
-            for (uint256 j = 0; j < candidateCount; j++) {
-                uint256 candidateId = constituency.candidateIds[j];
-                Candidate storage candidate = constituency.candidates[candidateId];
+    struct ConstituencyResult {
+        string name;
+        CandidateResult[] candidates;
+    }
 
-                candidatesInfo[j] = CandidateInfo({
-                    id: candidate.id,
-                    votes: candidate.votes
-                });
+    struct StateResult {
+        string name;
+        ConstituencyResult[] constituencies;
+    }
+
+    function getConstituencyData(string memory stateName, string memory constituencyName) public view returns (ConstituencyResult memory result) {
+        Constituency storage constituency = states[stateName].constituencies[constituencyName];
+        result.name = constituency.name;
+
+        uint256 len = constituency.candidates.length;
+        result.candidates = new CandidateResult[](len);
+        for (uint256 i = 0; i < len; i++) {
+            Candidate storage c = constituency.candidates[i];
+            result.candidates[i] = CandidateResult(c.id, c.voteCount);
+        }
+    }
+
+    function getStateData(string memory stateName) public view returns (StateResult memory result) {
+        State storage state = states[stateName];
+        result.name = state.name;
+        uint256 len = state.constituencyNames.length;
+        result.constituencies = new ConstituencyResult[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            string memory cName = state.constituencyNames[i];
+            Constituency storage constituency = state.constituencies[cName];
+
+            uint256 cLen = constituency.candidates.length;
+            CandidateResult[] memory cResults = new CandidateResult[](cLen);
+            for (uint256 j = 0; j < cLen; j++) {
+                cResults[j] = CandidateResult(constituency.candidates[j].id, constituency.candidates[j].voteCount);
             }
 
-            constituenciesInfo[i] = ConstituencyInfo({
-                name: constName,
-                candidates: candidatesInfo
-            });
+            result.constituencies[i] = ConstituencyResult(constituency.name, cResults);
         }
-
-        return StateInfo({
-            name: state.name,
-            constituencies: constituenciesInfo
-        });
     }
 
-    function getElectionDetails()
-        public
-        view
-        returns (
-            uint256 _electionId,
-            uint256 _startTime,
-            uint256 _registrationDeadline,
-            uint256 _votingDeadline
-        )
-    {
-        return (electionId, electionStartTime, registrationDeadline, votingDeadline);
+    function getAllState() public view returns (string[] memory) {
+        return stateNames;
+    }
+
+    function getConstituency(string memory stateName) public view returns (string[] memory) {
+        return states[stateName].constituencyNames;
     }
 }

@@ -1,6 +1,9 @@
 require('@nomicfoundation/hardhat-toolbox');
 
 module.exports = {
+  ignition: {
+    requiredConfirmations: 1,
+  },
   defaultNetwork: "hardhat",
   networks: {
     geth: {

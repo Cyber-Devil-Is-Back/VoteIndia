@@ -13,14 +13,18 @@ const paginationModel = { page: 0, pageSize: 14 };
 
 export default function DataGridComp({ columns, rows, loading, dataGridProps }: Props) {
   return (
-    <Box width='100%' height='100%' display='flex' flexDirection='column' px={0} gap={2} overflow={'auto'}>
+    <Box width='100%' maxHeight='800px' display='flex' flexDirection='column' px={0} gap={2} overflow={'auto'}>
       <DataGrid
         rows={rows}
         columns={columns}
         loading={loading}
         pageSizeOptions={[7,14]}
+        getRowHeight={dataGridProps?.getRowHeight ?? (() => 100)} 
         initialState={{
-          pagination: { paginationModel }
+          pagination: { paginationModel },
+          sorting: {
+          sortModel: [{ field: 'id', sort: 'asc' }], // or 'desc' if needed
+        },
         }}
         sx={{
           width: '100%',

@@ -1,7 +1,7 @@
 import DataGridComp from "@/components/DataGrid";
 import {  HourglassTop as HourglassTopIcon, CheckCircle, Cancel } from "@mui/icons-material";
 import { Avatar, Box, Button, Chip, Tooltip, Typography } from "@mui/material";
-import { getGridSingleSelectOperators, GridColDef, GridRowsProp } from "@mui/x-data-grid";
+import {  GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
 import AddDialoge from "./AddDialoge";
 
@@ -10,20 +10,20 @@ export default function NationalCandidatesLayout() {
     const [rows, setRows] = useState<GridRowsProp>([]);
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
-    const [selectedCandidates, setSelectedCandidates] = useState({
-        id: 0,
-        party_id: 0,
-        name: '',
-        gender:'',
-        image: '',
-        dob: '',
-        state: '',
-        district:'',
-        constituency: '',
-        status: '',
-        reason: '',
+    // const [selectedCandidates, setSelectedCandidates] = useState({
+    //     id: 0,
+    //     party_id: 0,
+    //     name: '',
+    //     gender:'',
+    //     image: '',
+    //     dob: '',
+    //     state: '',
+    //     district:'',
+    //     constituency: '',
+    //     status: '',
+    //     reason: '',
 
-    });
+    // });
 
     const handleClose = () => {
         setOpen(false);
@@ -63,8 +63,9 @@ export default function NationalCandidatesLayout() {
 }
     ]
     const loadCandidates = async () => {
+        const partyId = sessionStorage.getItem('partyId');
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/state/candidate/get_all`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/party/state/candidate/get_all/${partyId}`, {
             method: 'GET',
         });
         if (response.ok) {
@@ -83,9 +84,9 @@ export default function NationalCandidatesLayout() {
         loadCandidates();
     }, []);
 
-    const handleRowClick = (params: any) => {
-        console.log(params.row);
-    };
+    // const handleRowClick = (params: any) => {
+    //     console.log(params.row);
+    // };
 
     return (
         <Box width="100%" height="100%" py={3} display='flex' flexDirection='column' gap={2} >

@@ -2,14 +2,13 @@ use std::{env, fs::File, path::PathBuf};
 
 use actix_multipart::form::MultipartForm;
 use actix_web::{get, put};
-use actix_web::web::Json;
+use actix_web::web::{Json, Path};
 use actix_web::{post, web::Data, HttpResponse, Responder};
 use futures::StreamExt;
 use mongodb::bson::{doc, Bson, Document};
 use mongodb::options::FindOptions;
 use mongodb::{Client, Collection};
 use serde_json::json;
-
 use super::forms::{NationalCandidate, PartyStatus, Status};
 use super::forms::RegisterNationalCandidate;
 
@@ -84,7 +83,6 @@ pub async fn update_candidate_status(client: Data<Client>, data: Json<Status>) -
     if data.status != PartyStatus::Approved && data.status != PartyStatus::Rejected {
         return HttpResponse::BadRequest().json("Invalid status");
     }
-
     if data.status == PartyStatus::Rejected{
         update = doc! { "$set": { "status": PartyStatus::Rejected,"reason": data.reason.clone() } };
     } else {
@@ -123,6 +121,24 @@ pub async fn get_all_new_candidates(client: Data<Client>) -> impl Responder {
             return HttpResponse::InternalServerError().json("Error getting candidates");
         }
     }
+}
+#[get("/national/candidate/election_candidate/{state}")]
+pub async fn get_election_candidate(client:Data<Client>,state:Path<String>) ->  impl Responder{
+    let collection = client.database("voteIndia").collection::<NationalCandidate>("state_candidates");
+    match collection.find(doc! {"state": state.to_string(), "status": PartyStatus::Approved}).await
+    {
+        Ok(mut cursor) => {
+            let mut candidates = Vec::new();
+            while let Some(result) = cursor.next().await {
+                match result {
+                    Ok(candidate) => candidates.push(candidate),
+                    Err(_) => return HttpResponse::InternalServerError().body(format!("Some Error occured ")),
+                }
+            }
+            return HttpResponse::Ok().json(candidates)
+        },
+        Err(_) => return HttpResponse::InternalServerError().body(format!("Some Error occured ")),
+    };
 }
 #[get("/national/candidate/get_all")]
 pub async fn get_all_candidates(client: Data<Client>) -> impl Responder {

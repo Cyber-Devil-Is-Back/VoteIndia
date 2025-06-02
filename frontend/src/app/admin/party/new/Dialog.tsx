@@ -51,7 +51,7 @@ function PartyDialog({ open,onClose, party }: PartyDialogProps) {
         if (response.ok) {  
             setLoading(false);
             setPartyStatus("success");
-            console.log('Party status updated successfully:', data);
+            console.log('Party status updated successfully:', partyStatus);
         }
         else {
             setLoading(false);

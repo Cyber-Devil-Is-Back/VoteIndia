@@ -50,7 +50,7 @@ export default function Dialoge(props: CandidateProps) {
         if (props.open && props.data?.party_id) {
             fetchParty();
         }
-    }, [props.open]);
+    }, );
 
     const handleReject = async () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${props.updateLink}`, {

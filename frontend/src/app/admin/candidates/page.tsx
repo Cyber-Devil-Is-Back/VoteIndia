@@ -15,32 +15,44 @@ const columns: GridColDef[] = [
   { field: 'constituency', headerName: 'Constituency', width: 300 },
 ];
 
+type Candidate = {
+  _id: string;
+  name: string;
+  gender: string;
+  image: string;
+  dob: string;
+  state: string;
+  district: string;
+  constituency: string;
+  [key: string]: string; // optional: allows flexibility for extra fields
+};
+
 
 export default function NewCandidates()  {
     const [rows, setRows] = useState<GridRowsProp>([]);
     const [loading,setLoading] = useState(false);
-    // const fetchData = async () => {
-    //     setLoading(true);
-    // //     try {
-    // //       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/candidate/getAllNewCandidates`);
-    // //       const data = await response.json();
-    // //       if (response.ok) {
-    // //         // Convert _id to id for DataGrid
-    // //         const updatedRows = data.map((item: any) => ({
-    // //           ...item,
-    // //           id: item._id, // or item._id.$oid if it's a nested BSON ObjectId
-    // //         }));
-    // //         // setRows(updatedRows);
-    // //       } else {
-    // //         console.error('Error fetching data:', data);
-    // //       }
-    // //     } catch (error) {
-    // //       console.error('Error fetching data:', error);
-    // //     } finally {
-    // //       setLoading(false);
-    // //     }
-    // //   };
-    //   fetchData();
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/candidate/getAllNewCandidates`);
+          const data = await response.json();
+          if (response.ok) {
+            // Convert _id to id for DataGrid
+            const updatedRows = data.map((item: Candidate) => ({
+              ...item,
+              id: item._id, // or item._id.$oid if it's a nested BSON ObjectId
+            }));
+            setRows(updatedRows);
+          } else {
+            console.error('Error fetching data:', data);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
     return(
         <AdminDashBoardLayout>
             <Box sx={{display: 'flex',flexDirection: 'column',height: '100%', width: '100%'}} overflow={'auto'}>

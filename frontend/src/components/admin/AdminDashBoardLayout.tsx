@@ -13,7 +13,7 @@ import Diversity1Icon from '@mui/icons-material/Diversity1';
 import AppBar from "../DashBoard/AppBar";
 import SideBar from "../DashBoard/Sidebar";
 import BaseLayout from "../DashBoard/BaseLayout";
-import { PeopleAlt} from "@mui/icons-material";
+import { PeopleAlt, HowToVote as HowToVoteIcon } from "@mui/icons-material";
 
 const menuList: MenuItem[] = [
   { type: 'menuitem', name: "Dashboard", icon: <DashboardIcon />, link: "/admin/dashboard" },
@@ -24,7 +24,7 @@ const menuList: MenuItem[] = [
     type: 'menuitem',
     name: "Candidates",
     icon: <PersonIcon />,
-    link: "#", // can be "#" or omitted if not directly navigable
+    link: "#",
     children: [
       {
         name: "State",
@@ -40,7 +40,7 @@ const menuList: MenuItem[] = [
   },
   { type: 'divider' },
   { type: 'menuitem', name: "Election", icon: <BallotIcon />, link: "/admin/election" },
-  { type: 'menuitem', name: "Dashboard", icon: <ShoppingCartIcon />, link: "/orders" }
+  { type: 'menuitem', name: "Nominations", icon: <HowToVoteIcon />, link: "/admin/nominations" }
 ];
 
 export default function AdminDashBoardLayout({ children }: { children: React.ReactNode }) {

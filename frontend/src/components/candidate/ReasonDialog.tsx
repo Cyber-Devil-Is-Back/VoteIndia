@@ -1,6 +1,5 @@
 import { Dialog, DialogTitle, Typography, IconButton, DialogContent, DialogActions, Button } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import React, { useState } from "react";
 import ThickBorderTextField from "../CustomTextField";
 
 interface Props{

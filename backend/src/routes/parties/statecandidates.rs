@@ -1,13 +1,16 @@
+use std::string;
 use std::{env, fs::File, path::PathBuf};
 use actix_multipart::form::MultipartForm;
 use actix_web::{get, put};
-use actix_web::web::Json;
+use actix_web::web::{Json, Path};
 use actix_web::{post, web::Data, HttpResponse, Responder};
 use futures::StreamExt;
 use mongodb::bson::{doc, Bson, Document};
 use mongodb::options::FindOptions;
 use mongodb::{Client, Collection};
 use serde_json::json;
+use crate::routes::parties::forms::ElectionStateCandidate;
+
 use super::forms::{StateCandidate, PartyStatus, Status};
 use super::forms::RegisterStateCandidate;
 
@@ -122,14 +125,34 @@ pub async fn get_all_new_candidates(client: Data<Client>) -> impl Responder {
     }
 }
 
-#[get("/state/candidate/get_all")]
-pub async fn get_all_candidates(client: Data<Client>) -> impl Responder {
+#[get("/state/candidate/election_candidate/{id}")]
+pub async fn get_election_candidate(client:Data<Client>,id:Path<String>) ->  impl Responder{
+    let collection = client.database("voteIndia").collection::<ElectionStateCandidate>("state_candidates");
+    match collection.find(doc! {"party_id": id.to_string(), "status": PartyStatus::Approved}).projection(doc! {}).await
+    {
+        Ok(mut cursor) => {
+            let mut candidates = Vec::new();
+
+            while let Some(result) = cursor.next().await {
+                match result {
+                    Ok(candidate) => candidates.push(candidate),
+                    Err(_) => return HttpResponse::InternalServerError().body(format!("Some Error occured ")),
+                }
+            }
+            return HttpResponse::Ok().json(candidates)
+        },
+        Err(_) => return HttpResponse::InternalServerError().body(format!("Some Error occured ")),
+    };
+}
+
+#[get("/state/candidate/get_all/{id}")]
+pub async fn get_all_candidates(client: Data<Client>,id:Path<i64>) -> impl Responder {
     let client = client.database("voteIndia");
     let collection: Collection<Document> = client.collection("state_candidates");
     let options = FindOptions::builder()
         .projection(doc! { "_id": 0 })
         .build();
-    let candidates = collection.find(doc! {}).with_options(options).await;
+    let candidates = collection.find(doc! {"party_id": *id}).with_options(options).await;
     match candidates {
         Ok(mut cursor) => {
             let mut  candidates :Vec<Document> = Vec::new();
@@ -144,6 +167,35 @@ pub async fn get_all_candidates(client: Data<Client>) -> impl Responder {
         Err(e) => {
             println!("Error getting candidates: {}", e);
             return HttpResponse::InternalServerError().json("Error getting candidates");
+        }
+    }
+}
+#[get("/state/candidate/get_all")]
+pub async fn get_all_state_candidates( client: Data<Client>, ids: Json<Vec<i64>>,) -> impl Responder {
+    let client = client.database("voteIndia");
+    let collection: Collection<ElectionStateCandidate> = client.collection("state_candidates");
+    let filter = if ids.0.is_empty() {
+        doc! {}
+    } else {
+        doc! { "id": { "$in": ids.0.iter().map(|id| Bson::Int64(*id)).collect::<Vec<_>>() } }
+    };
+    match collection.find(filter).await {
+        Ok(mut cursor) => {
+            let mut candidates: Vec<ElectionStateCandidate> = Vec::new();
+            while let Some(candidate) = cursor.next().await {
+                match candidate {
+                    Ok(candidate) => candidates.push(candidate),
+                    Err(e) => {
+                        eprintln!("Error parsing candidate: {}", e);
+                        return HttpResponse::InternalServerError().json("Error parsing candidate");
+                    }
+                }
+            }
+            HttpResponse::Ok().json(candidates)
+        }
+        Err(e) => {
+            eprintln!("Error querying candidates: {}", e);
+            HttpResponse::InternalServerError().json("Failed to fetch candidates")
         }
     }
 }
