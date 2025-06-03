@@ -68,43 +68,11 @@ export default function LoginPage(props: LoginPageProps) {
       </Typography>
 
       {/* Form */}
-      <Box
-        component="form"
-        onSubmit={props.handlesubmit}
-        sx={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}
-      >
-        <InputField
-          label={props.input}
-          type="text"
-          value={props.inputfield}
-          onChange={(e) => props.setinputfield(e.target.value)}
-          placeholder={props.placeholder}
-        />
+      <Box component="form" onSubmit={props.handlesubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
+        <InputField label={props.input} type="text" value={props.inputfield} onChange={(e) => props.setinputfield(e.target.value)} placeholder={props.placeholder}/>
 
-        <InputField
-          label="Password"
-          type="password"
-          value={props.password}
-          onChange={(e) => props.setPassword(e.target.value)}
-          placeholder="••••••••"
-        />
-
-        <Button
-          type="submit"
-          fullWidth
-          sx={{
-            py: 1.5,
-            backgroundColor: '#000080',
-            color: '#fff',
-            fontWeight: 'bold',
-            borderRadius: 2,
-            '&:hover': {
-              backgroundColor: '#FF9933',
-              transform: 'translateY(-2px)',
-            },
-            transition: 'all 0.2s ease-in-out',
-          }}
-        >
+        <InputField label="Password" type="password" value={props.password} onChange={(e) => props.setPassword(e.target.value)} placeholder="••••••••"/>
+        <Button type="submit" fullWidth sx={{py: 1.5,backgroundColor: '#000080', color: '#fff',fontWeight: 'bold',borderRadius: 2,'&:hover': {backgroundColor: '#FF9933',transform: 'translateY(-2px)',},transition: 'all 0.2s ease-in-out', }} >
           Login
         </Button>
 

@@ -12,7 +12,6 @@ use election::nomimations;
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/user")
-                
                 .service(user::routes::login)
                 .service(user::routes::register)
                 .service(user::routes::generate_wallet)
@@ -54,6 +53,7 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
                 .service(election::nomimations::submit_nominations)
                 .service(election::nomimations::get_nominations)
                 .service(election::nomimations::finalize_nominations)
+                .service(election::voting::get_candidates)
                
         )
         .service(

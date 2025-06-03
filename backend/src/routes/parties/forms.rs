@@ -122,7 +122,7 @@ pub struct PartyReturn {
 
 #[derive(MultipartForm,Debug,)]
 pub struct RegisterStateCandidate{
-    pub party_id: Text<String>,
+    pub party_id: Text<i64>,
     pub name: Text<String>,
     pub gender: Text<String>,
     pub image: TempFile,
@@ -164,7 +164,7 @@ pub struct Status {
 #[derive(Serialize,Deserialize,Debug)]
 pub struct StateCandidate{
     pub id: i64,
-    pub party_id: String,
+    pub party_id: i64,
     pub name: String,
     pub gender: String,
     pub image: String,

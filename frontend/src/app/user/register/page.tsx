@@ -35,40 +35,9 @@ const InputField: React.FC<InputFieldProps> = ({
   onGenerate,
 }) => (
   <Box sx={{ position: "relative", width: "100%", mb: 2 }}>
-    <TextField
-      label={label}
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      fullWidth
-      required
-      disabled={disabled}
-      inputProps={{
-        maxLength: type === "number" ? 12 : 100,
-      }}
-      variant="outlined"
-      sx={{
-        backgroundColor: disabled ? "#f5f5f5" : "white",
-        "& .MuiOutlinedInput-root": {
-          pr: onGenerate ? 5 : 2,
-        },
-      }}
-    />
+    <TextField label={label} type={type} value={value} onChange={onChange} placeholder={placeholder} fullWidth required disabled={disabled} inputProps={{   maxLength: type === "number" ? 12 : 100, }} variant="outlined" sx={{   backgroundColor: disabled ? "#f5f5f5" : "white",   "& .MuiOutlinedInput-root": {     pr: onGenerate ? 5 : 2,   }, }} />
     {onGenerate && (
-      <IconButton
-        onClick={!disablebutton ? onGenerate : undefined}
-        disabled={disablebutton}
-        sx={{
-          position: "absolute",
-          right: 8,
-          top: "50%",
-          transform: "translateY(-50%)",
-          backgroundColor: "white",
-          border: "1px solid",
-          borderColor: disablebutton ? "grey.400" : "#000080",
-          color: disablebutton ? "grey.400" : "black",
-          "&:hover": {
+      <IconButton onClick={!disablebutton ? onGenerate : undefined} disabled={disablebutton} sx={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", backgroundColor: "white", border: "1px solid", borderColor: disablebutton ? "grey.400" : "#000080", color: disablebutton ? "grey.400" : "black", "&:hover": {
             color: "#FF9933",
             borderColor: "#FF9933",
           },

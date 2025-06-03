@@ -1,67 +1,183 @@
-"use client"
-import { useEffect, useState } from "react";
+'use client';
+import React, { useState } from 'react';
+import {
+  Container,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  Box,
+} from '@mui/material';
 
-export default function VotePage() {
-  const [candidate, setCandidates] = useState([]);
-  const [message, setMessage] = useState("");
+const districts = ['District A', 'District B', 'District C'];
+const constituencies = {
+  'District A': ['Constituency A1', 'Constituency A2'],
+  'District B': ['Constituency B1', 'Constituency B2'],
+  'District C': ['Constituency C1', 'Constituency C2'],
+};
 
-  useEffect(() => {
-    // Fetch candidates from API
-    fetch("/api/candidates")
-      .then((response) => response.json())
-      .then((data) => setCandidates(data))
-      .catch((error) => console.error("Error fetching candidates:", error));
-      setMessage("Welcome to the Voting Page! Please select your candidate.");
-      console.log("Candidates fetched successfully:", candidate);
-  },[candidate] );
+const candidates = [
+  {
+    id: 1,
+    name: 'Alice Johnson',
+    party: 'Party Alpha',
+    photo: '/images/alice.jpg',
+    symbol: '/images/alpha.png',
+    district: 'District A',
+    constituency: 'Constituency A1',
+  },
+  {
+    id: 2,
+    name: 'Bob Smith',
+    party: 'Party Beta',
+    photo: '/images/bob.jpg',
+    symbol: '/images/beta.png',
+    district: 'District A',
+    constituency: 'Constituency A1',
+  },
+  // Add more candidates as needed
+];
 
-  // const handleVote = async (candidateId) => {
-  //   try {
-  //     const response = await fetch("/api/vote", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ candidateId }),
-  //     });
+export default function VotingPage() {
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedConstituency, setSelectedConstituency] = useState('');
+  const [selectedCandidateId, setSelectedCandidateId] = useState(null);
 
-  //     if (response.ok) {
-  //       setMessage("✅ Vote cast successfully!");
-  //     } else {
-  //       setMessage("❌ Failed to vote. Please try again.");
-  //     }
-  //   } catch (error) {
-  //     setMessage("⚠️ Error: Could not send vote.");
-  //   }
-  // };
+  const handleDistrictChange = (event) => {
+    setSelectedDistrict(event.target.value);
+    setSelectedConstituency('');
+    setSelectedCandidateId(null);
+  };
+
+  const handleConstituencyChange = (event) => {
+    setSelectedConstituency(event.target.value);
+    setSelectedCandidateId(null);
+  };
+
+  const handleCandidateSelect = (id) => {
+    setSelectedCandidateId(id);
+  };
+
+  const handleSubmitVote = () => {
+    if (selectedCandidateId) {
+      const candidate = candidates.find((c) => c.id === selectedCandidateId);
+      alert(`You have voted for ${candidate.name} of ${candidate.party}`);
+      // Integrate blockchain vote submission logic here
+    } else {
+      alert('Please select a candidate before submitting your vote.');
+    }
+  };
+
+  const filteredCandidates = candidates.filter(
+    (c) =>
+      c.district === selectedDistrict &&
+      c.constituency === selectedConstituency
+  );
 
   return (
-    <div className="relative flex  justify-center min-h-screen bg-gradient-to-b from-[#FF9933] via-white to-[#138808] p-4">
-      <h1 className="text-3xl font-bold text-center mb-6 text-white">🗳️ Vote for Your Candidate</h1>
+    <Container maxWidth="md" sx={{ py: 5 }}>
+      <Typography variant="h4" gutterBottom>
+        Blockchain Voting System
+      </Typography>
 
-      {message && (
-        <div className="text-center text-green-600 font-semibold mb-4">{message}</div>
-      )}
+      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+        <FormControl fullWidth>
+          <InputLabel id="district-label">District</InputLabel>
+          <Select
+            labelId="district-label"
+            value={selectedDistrict}
+            label="District"
+            onChange={handleDistrictChange}
+          >
+            {districts.map((district) => (
+              <MenuItem key={district} value={district}>
+                {district}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* {candidates.map((candidate) => (
-          <div key={candidate.id} className="bg-white p-4 rounded-lg shadow-lg">
-            <img
-              src={candidate.image_url}
-              alt={candidate.name}
-              className="w-full h-40 object-cover rounded-md"
-            />
-            <h2 className="text-xl font-semibold mt-2">{candidate.name}</h2>
-            <p className="text-gray-600">{candidate.party}</p>
-            <button
-              onClick={() => handleVote(candidate.id)}
-              className="mt-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        <FormControl fullWidth disabled={!selectedDistrict}>
+          <InputLabel id="constituency-label">Constituency</InputLabel>
+          <Select
+            labelId="constituency-label"
+            value={selectedConstituency}
+            label="Constituency"
+            onChange={handleConstituencyChange}
+          >
+            {selectedDistrict &&
+              constituencies[selectedDistrict].map((constituency) => (
+                <MenuItem key={constituency} value={constituency}>
+                  {constituency}
+                </MenuItem>
+              ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      {selectedDistrict && selectedConstituency && (
+        <>
+          <Typography variant="h5" gutterBottom>
+            Candidates
+          </Typography>
+          <Grid container spacing={3}>
+            {filteredCandidates.map((candidate) => (
+              <Grid item xs={12} sm={6} md={4} key={candidate.id}>
+                <Card
+                  sx={{
+                    border:
+                      selectedCandidateId === candidate.id
+                        ? '2px solid #1976d2'
+                        : '1px solid #ccc',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => handleCandidateSelect(candidate.id)}
+                >
+                  <CardMedia
+                    component="img"
+                    height="140"
+                    image={candidate.photo}
+                    alt={candidate.name}
+                  />
+                  <CardContent>
+                    <Typography variant="h6">{candidate.name}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      <img
+                        src={candidate.symbol}
+                        alt={candidate.party}
+                        style={{ width: 24, height: 24, marginRight: 8 }}
+                      />
+                      <Typography variant="body2">{candidate.party}</Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Box sx={{ mt: 4 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSubmitVote}
+              disabled={!selectedCandidateId}
             >
-              ✅ Vote
-            </button>
-          </div>
-        ))} */}
-      </div>
-    </div>
+              Submit Vote
+            </Button>
+          </Box>
+        </>
+      )}
+    </Container>
   );
 }
+
+
+// can you suggest me layout for voting page for user based on my blockchain voting systems
+//  in which i will give option user to select option to select district and constutuiency and then optin 
+//  to select their desired candidates displayed with party symbol and their photos 

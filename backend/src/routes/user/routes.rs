@@ -1,6 +1,6 @@
 use std::{env, fs, path::PathBuf};
 use actix_files::NamedFile;
-use actix_multipart::form::MultipartForm;
+use actix_multipart::form::{json, MultipartForm};
 use actix_web::{cookie::{time::Duration, Cookie, SameSite}, get, patch, post, web::{Data, Json, Query}, HttpRequest, HttpResponse, Responder};
 use futures::TryStreamExt;
 use mongodb::{bson::doc, Client, Collection};
@@ -36,7 +36,16 @@ pub async  fn login(client: Data<Client>, form: Json<LoginForm>) -> impl Respond
                                                 .path("/")
                                                 .same_site(SameSite::None)
                                                 .finish();
-                HttpResponse::Ok().cookie(cookie).json(message("Login successful"))
+                HttpResponse::Ok().cookie(cookie).json(json!({
+                    "message": "Login successful",
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "state": user.state,
+                        "image": user.image,
+
+                    }
+                }))
             } else {
                 HttpResponse::Unauthorized().json(message("Invalid credentials"))
             }

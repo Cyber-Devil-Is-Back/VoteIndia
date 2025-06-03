@@ -167,7 +167,6 @@ pub async fn get_nominations(mongodb: Data<Client>) -> impl Responder {
 pub async fn finalize_nominations(mongodb:Data<Client>,web3:Data<Web3<Http>>,data:Json<EnrichedNomination>) -> impl Responder {
     let coll : Collection<Document> = mongodb.database("voteIndia").collection("election");
     let address = coll.find_one(doc! {}).sort(doc!{ "date": -1 }).await.unwrap().unwrap().get_str("address").unwrap().to_string();
-    println!("{:?}",address);
     if data.election_type == "state"{
         let contract  =  Vidhansabha::new(web3.get_ref().clone(), address);
         match contract.register_candidate(data.0.location, data.0.constituency, data.0.candidateid as u128).await {

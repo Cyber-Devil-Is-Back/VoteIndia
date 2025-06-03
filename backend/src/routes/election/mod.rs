@@ -1,5 +1,6 @@
 pub mod new_election;
 pub mod nomimations;
+pub mod voting;
 use std::{env,error::Error,process::{Command, Stdio},};
 use regex::Regex;
 use serde::{Deserialize, Serialize};

@@ -15,7 +15,7 @@ export default function Login() {
 
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -37,6 +37,7 @@ export default function Login() {
 
       if (response.status === 200) {
         sessionStorage.setItem("id",id);
+        sessionStorage.setItem('user', JSON.stringify(data.user));
         router.push("/user/face-auth");
       }
     } catch (error) {
@@ -46,15 +47,7 @@ export default function Login() {
 
   return (
     
-      <LoginPage
-        header="भारत निर्वाचन प्रणाली"
-        input="Adhar Number"
-        placeholder="Enter your Adhar Number"
-        inputfield={id}
-        setinputfield={setId}
-        password={password}
-        setPassword={setPassword}
-        handlesubmit={handleSubmit}
+      <LoginPage header="भारत निर्वाचन प्रणाली" input="Adhar Number" placeholder="Enter your Adhar Number" inputfield={id} setinputfield={setId} password={password} setPassword={setPassword} handlesubmit={handleSubmit}
       />
 
   );

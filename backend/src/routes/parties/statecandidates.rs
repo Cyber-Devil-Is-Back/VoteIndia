@@ -19,7 +19,13 @@ pub async fn register_candidate(client: Data<Client>, mut form: MultipartForm<Re
     println!("Form: {:?}", form.0);
     let database  = client.database("voteIndia");
     let collection:Collection<StateCandidate> = database.collection("state_candidates");
-    if form.name.is_empty() || form.party_id.is_empty() || form.state.is_empty() || form.district.is_empty() || form.constituency.is_empty() || form.0.image.file_name.is_none() {
+    if form.name.is_empty()
+        || form.party_id.0 == 0
+        || form.state.is_empty()
+        || form.district.is_empty()
+        || form.constituency.is_empty()
+        || form.0.image.file_name.is_none()
+    {
         return HttpResponse::BadRequest().json("All fields are required")
     }
     println!("check pass");

@@ -8,6 +8,7 @@ export default function NewElectionPage() {
     const [snackbarOpen, setSnackbarOpen] = React.useState<boolean>(false);
     const [snackbarMessage, setSnackbarMessage] = React.useState<string>('');
     const [loading, setLoading] = React.useState<boolean>(false);
+    const [selctedState,setSelectedState] = React.useState<string>('');
 
     const fetchStates = async () => {
         try {
@@ -17,6 +18,7 @@ export default function NewElectionPage() {
             if (response.ok) {
                 const data = await response.json();
                 setStates(data);
+                setSelectedState(data[0]);
             } else {
                 const error = await response.json();
                 console.error("Error fetching states:", error);
@@ -32,6 +34,7 @@ export default function NewElectionPage() {
         }
     }, [electionType]);
     const requestElectionDeployed = async () => {
+        console.log(selctedState);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/election/deploy`, {
                 method: 'POST',
@@ -40,7 +43,7 @@ export default function NewElectionPage() {
                 },
                 body: JSON.stringify({
                     election_type:electionType === "Lok Sabha Elections" ? "LokSabha" : "VidhanSabha",
-                    state: electionType === "Vidhan Sabha Election" ? states[0] : null,
+                    state: electionType === "Vidhan Sabha Election" ? selctedState : null,
                 }),
             });
             if (response.ok) {
@@ -77,8 +80,8 @@ export default function NewElectionPage() {
                     <MenuItem value="Vidhan Sabha Election">Vidhan Sabha Election</MenuItem>
                 </ThickBorderTextField>
                 {electionType === "Vidhan Sabha Election" && (
-                    <ThickBorderTextField label="State" variant="outlined" select fullWidth sx={{ mt: 2 }} >
-                        {states.map((state: string) => (
+                    <ThickBorderTextField label="State" variant="outlined" select value={selctedState} onChange={(e) => (setSelectedState(e.target.value))}  fullWidth sx={{ mt: 2 }} >
+                        {states.sort().map((state: string) => (
                             <MenuItem key={state} value={state}>
                                 {state}
                             </MenuItem>

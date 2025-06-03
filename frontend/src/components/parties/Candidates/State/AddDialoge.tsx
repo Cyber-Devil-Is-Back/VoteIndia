@@ -135,8 +135,8 @@ export default function AddDialoge(props: AddDialogProps) {
                 <ThickBorderTextField label="State" fullWidth value={state} slotProps={{ inputLabel: { shrink: true } }} onChange={handleChange} name="state" >
                     </ThickBorderTextField>
                 <ThickBorderTextField label="District" fullWidth select onChange={handleChange} name="district">
-                    {Object.keys(constituencyMap).sort().map((constituency) => (
-                        <MenuItem key={constituency} value={constituency}>{constituency}</MenuItem>
+                    {Object.keys(constituencyMap).sort().map((district) => (
+                        <MenuItem key={district} value={district}>{district}</MenuItem>
                     ))}
                     </ThickBorderTextField>
                 <ThickBorderTextField label="Constituency" fullWidth select onChange={handleChange} name="constituency">
