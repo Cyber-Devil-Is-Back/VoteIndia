@@ -101,6 +101,7 @@ pub async fn get_nominations(mongodb: Data<Client>) -> impl Responder {
         }
     };
     let docs: Vec<Document> = cursor.filter_map(|res| async { res.ok() }).collect().await;
+    println!("Fetched nominations: {:?}", docs);
     if docs.is_empty() {
         return HttpResponse::Ok().json(Vec::<EnrichedNomination>::new());
     }

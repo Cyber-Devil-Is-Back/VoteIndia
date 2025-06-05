@@ -3,10 +3,7 @@ mod user;
 mod parties;
 mod election;
 
-
-
 use actix_web::web;
-use election::nomimations;
 // use crate::middlewares::auth::Auth; // Import the AuthMiddleware
 
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
@@ -54,6 +51,10 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
                 .service(election::nomimations::get_nominations)
                 .service(election::nomimations::finalize_nominations)
                 .service(election::voting::get_candidates)
+                .service(election::voting::get_voters)
+                .service(election::voting::fund_token)
+                .service(election::voting::get_balance)
+                .service(election::voting::vote)
                
         )
         .service(

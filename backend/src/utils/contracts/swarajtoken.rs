@@ -46,6 +46,10 @@ impl SwarajToken {
        self.confirm_transaction(tx).await
        
     }
+    pub async fn approve_contarct(&self, contract_address: Address, amount: U256,address:Address) -> Result<(), Error> {
+       let tx =  self.contract.call("approve", (contract_address, amount), address, Options::default()).await.unwrap();
+       self.confirm_transaction(tx).await
+    }
 
     /// `transfer` - Transfer tokens
     pub async fn transfer(&self, to: Address, amount: U256) -> Result<(), Error> {
@@ -85,7 +89,8 @@ impl SwarajToken {
     }
 
     /// `depositGasFunds` - Deposit ETH to contract
-    pub async fn deposit_gas_funds(&self, amount: U256) -> Result<(), Error> {
+    pub async fn deposit_gas_funds(&self,user_count: i64) -> Result<(), Error> {
+      let amount =  U256::exp10(18) * U256::from(user_count);
        let tx =  self.contract.call("depositGasFunds", (), self.owner.unlock().await.unwrap(), Options { value: Some(amount), ..Options::default() }).await.unwrap();
        self.confirm_transaction(tx).await
     }

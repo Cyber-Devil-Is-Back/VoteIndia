@@ -1,6 +1,6 @@
 use std::{env, fs, path::PathBuf};
 use actix_files::NamedFile;
-use actix_multipart::form::{json, MultipartForm};
+use actix_multipart::form::{ MultipartForm};
 use actix_web::{cookie::{time::Duration, Cookie, SameSite}, get, patch, post, web::{Data, Json, Query}, HttpRequest, HttpResponse, Responder};
 use futures::TryStreamExt;
 use mongodb::{bson::doc, Client, Collection};
@@ -43,6 +43,7 @@ pub async  fn login(client: Data<Client>, form: Json<LoginForm>) -> impl Respond
                         "username": user.username,
                         "state": user.state,
                         "image": user.image,
+                        "wallet_address": user.walletaddress,
 
                     }
                 }))
@@ -72,7 +73,7 @@ pub async fn register( client: Data<Client>, form: MultipartForm<RegisterUser>) 
         },
         None => "unknown", // If no file name is provided
     };
-    let valid_extensions = ["png", "jpg", "jpeg"];
+    let valid_extensions = ["png", "jpg", "jpeg","webp"];
     
     if !valid_extensions.contains(&file_extension)  {
         return HttpResponse::BadRequest().json(message("Invalid file type"));

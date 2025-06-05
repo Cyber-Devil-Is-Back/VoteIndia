@@ -1,43 +1,29 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// app/layout.tsx (or wherever your RootLayout is)
+
+// Imports
+import { Box } from "@mui/material";
 import "../globals.css";
+import "./user.css";
+import ThemeRegistry from "@/components/provider/ThemeRegistry";
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Vote India",
-  description: "Vote India - A secure and reliable voting system", 
-  
-};
-
+// RootLayout Component
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen w-screen relative`}>
-      <div 
-        className="absolute inset-0 bg-[url('/images.jpeg')] bg-cover bg-center bg-no-repeat"
-      ></div>
-      <div 
-        className="absolute inset-0 bg-white/30 backdrop-blur-[4px]"
-      ></div>
-      <div className="relative z-10">
+   <Box width="100vw" height="100vh" sx={{ position: 'relative', overflow: 'hidden' }}> {/* Background Image */}
+    <Box sx={{position: 'absolute',width: '100%',height: '100%',backgroundImage: "url('/backgroung.webp')",backgroundSize: 'cover',backgroundPosition: 'center',backgroundRepeat: 'no-repeat',filter: 'blur(8px)',}}/>
+    <Box sx={{position: 'relative',zIndex: 1, width: '100%', height: '100%',bgcolor:"transparent",padding:5 }}> 
+      <ThemeRegistry>
         {children}
-      </div>
-    </body>
+      </ThemeRegistry>
+    </Box>
+</Box>
 
-    </html>
+        
+
   );
 }
+

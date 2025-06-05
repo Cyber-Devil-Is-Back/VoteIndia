@@ -7,7 +7,7 @@ use mongodb::{bson::{doc, Bson, Document}, options::FindOptions, Client};
 use serde::Deserialize;
 use serde_json::json;
 use web3::{transports::Http, types::U256, Web3};
-use crate::{routes::parties::forms::{ApprovedParty, PartyLogin, PartyStatus, Status}, utils::{common::password::{hash_password, verify_password}, contracts::party::PartyRegisterClient}};
+use crate::{routes::parties::forms::{ApprovedParty, PartyLogin, PartyStatus, Status}, utils::{common::password::{hash_password, verify_password}, contracts::party::PartyClient}};
 use super::forms::{Party,PartyReturn,PartyType, PartyForm};
 
 const DB_NAME: &str = "voteIndia";
@@ -53,22 +53,14 @@ pub async  fn login_party(client: Data<Client>, form: Json<Login>) -> impl Respo
     }
 }
 #[post("/register")]
-pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyForm>) -> impl Responder {
+pub async fn register_party(web3:Data<Web3<Http>>,client: Data<Client>, mut form: MultipartForm<PartyForm>) -> impl Responder {
     let db = client.database(DB_NAME);
     let collection = db.collection::<Party>(COLL_NAME);
+    let party_client = PartyClient::new(web3.get_ref().clone());
 
     // Check if the party name already exists
-    let existing_party = collection
-    .find_one(doc! {
-        "$or": [
-            { "name": form.0.party_name.clone() },
-            { "party_abbreviation": form.0.party_abbreviation.clone()},
-            { "party_email": form.0.party_email.clone() }
-        ]
-    })
-    .await
-    .unwrap_or(None);
-    if existing_party.is_some() {
+    let existing_party_result = party_client.get_party_by_name(&form.0.party_name).await;
+    if let Ok(Some(_party_data)) = existing_party_result {
         return HttpResponse::BadRequest().json("A party with the same name, abbreviation, or email already exists");
     }
 
@@ -84,7 +76,7 @@ pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyF
         return HttpResponse::BadRequest().json("Invalid form data: All fields are required");
     }
     // Validate the file types and sizes
-    let valid_extensions = ["png", "jpg", "jpeg"];
+    let valid_extensions = ["png", "jpg", "jpeg","webp"];
     let party_logo_file_name = form.0.party_logo.file_name.clone().unwrap_or_default();
     let logoextension = party_logo_file_name.split('.').last().unwrap_or_default();
     let leader_file_name = form.0.leader_image.file_name.clone().unwrap_or_default();
@@ -107,22 +99,19 @@ pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyF
     std::io::copy(&mut form.0.party_logo.file, &mut party_logo_file).unwrap();
     std::io::copy(&mut form.0.leader_image.file, &mut leader_image_file).unwrap();
 
-
-
-    // Create FindOptions
+     // Create FindOptions
     let find_options = FindOptions::builder()
         .sort(doc! { "_id": -1 })
         .projection(doc! { "_id": 1 })
         .limit(1)
         .build();
 
-    // Perform the query
+
     let mut cursor = client.database(DB_NAME).collection::<Document>(COLL_NAME).find(doc! {}).with_options(find_options).await.unwrap();
     let last_id = match cursor.next().await {
         Some(Ok(doc)) => doc.get("_id").and_then(|id| id.as_i64()).unwrap_or(0) + 1,
         _ => 1,
     };
-   
  
     let state_party = Party {
         name: form.0.party_name.into_inner(), party_abbreviation: form.0.party_abbreviation.into_inner(), party_slogan: form.0.party_slogan.into_inner(),
@@ -140,6 +129,7 @@ pub async fn register_party(client: Data<Client>, mut form: MultipartForm<PartyF
   
     HttpResponse::Ok().json("State party registered successfully")
 }
+
 #[put("/update_status")]
 pub async fn update_status(client:Data<Client>,web3:Data<Web3<Http>>,form:Json<Status>) ->  impl Responder {
     println!("this is form {:?}",form);
@@ -165,7 +155,7 @@ pub async fn update_status(client:Data<Client>,web3:Data<Web3<Http>>,form:Json<S
             return HttpResponse::Ok().json("Party status updated to rejected");
         }
         else if form.status == PartyStatus::Approved {
-            let mut  partyregisterclient = PartyRegisterClient::new(web3.get_ref().clone());
+            let mut  partyregisterclient = PartyClient::new(web3.get_ref().clone());
             let _  = partyregisterclient.register_party(U256::from(data._id as u64),
                 &data.name,&data.party_abbreviation,&data.party_slogan,&data.registration_on,&data.party_description,
                 data.party_type as u8,&data.party_manifesto,&data.party_founder,&data.party_logo,&data.state
@@ -198,10 +188,11 @@ pub async fn update_status(client:Data<Client>,web3:Data<Web3<Http>>,form:Json<S
 
 #[get("/get_by_name/{name}")]
 pub async fn get_state_party_by_name(client:Data<Client>, web3:Data<Web3<Http>>, name: web::Path<String>) -> impl Responder {
-   let partyregisterclient = PartyRegisterClient::new(web3.get_ref().clone());
+   let partyregisterclient = PartyClient::new(web3.get_ref().clone());
     let party_data = partyregisterclient.get_party_by_name(name.into_inner().as_str()).await;
     match party_data {
         Ok(party_data) => {
+            let party_data = party_data.unwrap();
             let db = client.database(DB_NAME);
             let collection = db.collection::<ApprovedParty>(COLL_NAME);
             let result = collection.find_one(doc! { "_id": Bson::from(party_data.id as i64) }).await.unwrap().unwrap();
@@ -218,7 +209,7 @@ pub async fn get_state_party_by_name(client:Data<Client>, web3:Data<Web3<Http>>,
 
 #[get("/get_party_by_id/{id}")]
 pub async fn get_state_party_by_id(web3: Data<Web3<Http>>, id: web::Path<i64>) -> impl Responder {
-    let partyregisterclient = PartyRegisterClient::new(web3.get_ref().clone());
+    let partyregisterclient = PartyClient::new(web3.get_ref().clone());
     let party_data = partyregisterclient.get_party_by_id(U256::from(*id)).await;
     match party_data {
         Ok(party_data) => {
@@ -233,7 +224,7 @@ pub async fn get_state_party_by_id(web3: Data<Web3<Http>>, id: web::Path<i64>) -
 #[get["get_by_state/{state}"]]
 pub async fn get_party_by_state(web3: Data<Web3<Http>>, state: web::Path<String>) -> impl Responder {
     let mut partylist = Vec::new();
-    let partyregisterclient = PartyRegisterClient::new(web3.get_ref().clone());
+    let partyregisterclient = PartyClient::new(web3.get_ref().clone());
     match partyregisterclient.get_party_by_state(state.into_inner().as_str()).await {
         Ok(party_data) => {
             for i in 0..party_data.len() {
@@ -253,7 +244,7 @@ pub async fn get_party_by_state(web3: Data<Web3<Http>>, state: web::Path<String>
 #[get("/get_natioanl_parties")]
 pub async fn get_national_parties( web3: Data<Web3<Http>>) -> impl Responder {
     let mut partylist = Vec::new();
-    let partyregisterclient = PartyRegisterClient::new(web3.get_ref().clone());
+    let partyregisterclient = PartyClient::new(web3.get_ref().clone());
     match partyregisterclient.get_all_parties_by_type(0).await {
         Ok(party_data) => {
             for i in 0..party_data.len() {
@@ -273,7 +264,7 @@ pub async fn get_national_parties( web3: Data<Web3<Http>>) -> impl Responder {
 #[get("/get_state_parties")]
 pub async fn get_state_parties(web3: Data<Web3<Http>>) -> impl Responder {
     let mut partylist = Vec::new();
-    let partyregisterclient = PartyRegisterClient::new(web3.get_ref().clone());
+    let partyregisterclient = PartyClient::new(web3.get_ref().clone());
     match partyregisterclient.get_all_parties_by_type(1).await {
         Ok(party_data) => {
             for i in 0..party_data.len() {

@@ -78,14 +78,20 @@ export default function FaceAuth() {
       .withFaceDescriptors();
 
     if (detections.length === 1) {
-      setFaceStatus('✅ Single Face Detected');
-
+    
       const similarity = cosineSimilarity(faceDescriptorRef.current, Array.from(detections[0].descriptor));
       console.log(similarity)
       if (similarity > 0.8){
         setColor('text-green-600');
+         setFaceStatus('✅ Face Matched Successfully!');
+      } else if (similarity > 0.5) {
+        setFaceStatus('⚠️ Face Recognized, but not a perfect match. Please try again.');
+        setColor('text-yellow-600');
       }
-      
+      else {
+        setFaceStatus('❌ Face Not Recognized');
+        setColor('text-red-600');
+      }
 
     } else if (detections.length > 1) {
       setFaceStatus('⚠️ Multiple Faces Detected! Only one person should be present.');

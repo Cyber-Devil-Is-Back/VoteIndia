@@ -46,19 +46,19 @@ impl Detokenize for PartyData {
         })
     }
 }
-pub struct  PartyRegisterClient{
+pub struct  PartyClient{
     pub contract: Contract<Http>,
     pub owner: Owner,
     pub web3: Web3<Http>,
 }
 
-impl PartyRegisterClient {
-    pub fn new(web3: Web3<Http>) -> PartyRegisterClient {
+impl PartyClient {
+    pub fn new(web3: Web3<Http>) -> PartyClient {
         dotenv::dotenv().ok();
         let contract_address = std::env::var("PARTIES_CONTRACT_ADDRESS").expect("PARTIES_CONTRACT_ADDRESS must be set");
         let abi_path = std::env::var("PARTIES_CONTRACT_ABI").expect("PARTIES_CONTRACT_ABI must be set");
         let contract = super::helper::load_contract(contract_address, abi_path, web3.clone()).unwrap();
-        PartyRegisterClient { contract, owner: Owner::new(), web3 }
+        PartyClient { contract, owner: Owner::new(), web3 }
     }
     pub async fn register_party(&mut self,_id:U256, name: &str, abbreviation: &str, slogan: &str, registered_on: &str, description: &str, party_type: u8,  manifesto: &str,founder:&str, logo: &str, state: &str) ->Result<bool, Error> {
         let option = Options {
@@ -85,10 +85,15 @@ impl PartyRegisterClient {
                     None => Err(Error::from("Transaction receipt not found. Try increasing gas.".to_string())),
                 }
     }
+   
+
    pub async fn get_party_by_id(&self, party_id: U256) -> Result<PartyData, Error> {
+    if party_id.is_zero() {
+        return Err(Error::from("Party ID cannot be zero".to_string()));
+    }
     let result: Token = self
         .contract
-        .query("getPartyById", (party_id,), None, Options::default(), None)
+        .query("getPartyById", (party_id,), self.owner.unlock().await.unwrap(), Options::default(), None)
         .await.unwrap();
     match result {
         Token::Tuple(inner_tokens) => {
@@ -99,31 +104,27 @@ impl PartyRegisterClient {
             Err(Error::InvalidOutputType("Expected tuple token".into()))
         }
     }
-    // Expecting exactly one token which is a tuple
-    // if result.len() != 1 {
-    //     return Err(Error::InvalidOutputType(format!(
-    //         "Expected 1 token (tuple), got {}",
-    //         result.len()
-    //     )));
-    // }
-
-    // match &result[0] {
-    //     Token::Tuple(inner_tokens) => {
-    //         let party_data = PartyData::from_tokens(inner_tokens.clone())?;
-    //         Ok(party_data)
-    //     }
-    //     _ => Err(Error::InvalidOutputType("Expected tuple token".into())),
-    // }
+   
 }
 
-    pub async fn get_party_by_name(&self, party_name: &str) -> Result<PartyData, Error> {
-        let result = self.contract.query("getPartyByName", (party_name.to_string(),), None, Options::default(), None).await?;
-        let party_data: PartyData = PartyData::from_tokens(result)?;
-        Ok(party_data)
-    }
+    pub async fn get_party_by_name(&self, party_name: &str) -> Result<Option<PartyData>, Error> {
+        let result = self
+            .contract
+            .query("getPartyByName", (party_name.to_string(),), None, Options::default(), None)
+            .await;
+
+        match result {
+            Ok(tokens) => {
+                let party_data = PartyData::from_tokens(tokens)?;
+                Ok(Some(party_data))
+            }
+            Err(e) => Err(e),
+        }
+  }
+
     #[allow(dead_code)]
     pub async fn get_all_parties(&self) -> Result<Vec<PartyData>, Error> {
-        let result: Vec<Vec<Token>> = self.contract.query("getAllParties", (), None, Options::default(), None).await?;
+        let result: Vec<Vec<Token>> = self.contract.query("getAllParties", (),  None, Options::default(), None).await?;
         let parties: Vec<PartyData> = result.into_iter().map(|token| PartyData::from_tokens(token)).collect::<Result<Vec<_>, _>>()?;
         Ok(parties)
     }

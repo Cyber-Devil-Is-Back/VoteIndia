@@ -18,3 +18,16 @@ pub async fn create_account() -> Result<String,io::Error>{
     
     Ok(hex::encode(address.as_bytes()))
 }
+pub async fn unlock_account(address: Address) -> Result<(), io::Error> {
+    dotenv::dotenv().ok(); // Load environment variables from .env
+
+    let url = env::var("RPC_URL").unwrap();
+    let transport = Http::new(&url).unwrap();
+    let web3 = Web3::new(transport);
+
+    let password = env::var("WALLET_PASSWORD").unwrap();
+    
+    web3.personal().unlock_account(address, &password, Some(1000)).await.unwrap();
+    
+    Ok(())
+}

@@ -1,13 +1,13 @@
-use actix_web::{get, post, web::{Data, Json}, HttpResponse, Responder};
+use actix_web::{get, post, web::{Data, Json, Path}, HttpResponse, Responder};
 use mongodb::{
     bson::{doc, Bson},
     Client, Collection,
 };
-use web3::{transports::Http, Web3};
-use futures_util::stream::StreamExt;
-use std::collections::{HashMap, HashSet};
+use serde_json::json;
+use web3::{ethabi::Address, transports::Http, types::U256, Web3};
+use futures::stream::StreamExt;
 
-use crate::utils::contracts::{loksabha::LokSabha, vidhansabha::Vidhansabha};
+use crate::utils::{contracts::{ party::PartyClient, swarajtoken::SwarajToken, vidhansabha::Vidhansabha}, user::generate_account::unlock_account};
 
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
 struct Location {
@@ -20,6 +20,7 @@ struct Location {
 struct Election {
     pub etype: String,
     pub address: String,
+    pub state: String,
 }
 
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
@@ -78,63 +79,178 @@ pub async fn get_candidates(mongodb: Data<Client>,web3: Data<Web3<Http>>,data: J
         };
         println!(" 2 till here");
 
-        let mut candidates: Vec<Candidate> = Vec::new();
+        let mut candidates: Vec<Result> = Vec::new();
         while let Some(result) = cursor.next().await {
             println!("{:?}",result);
             match result {
-                Ok(candidate) => candidates.push(candidate),
+                Ok(candidate) => {
+                    let party = PartyClient::new(web3.get_ref().clone()).get_party_by_id(U256::from(candidate.party_id)).await.unwrap();
+                    
+                    candidates.push(Result{
+                        id:candidate.id,
+                        name: candidate.name,
+                        image: candidate.image,
+                        party_name: party.name,
+                        party_symbol: party.logo,
+                    });
+
+
+                },
                 Err(e) => eprintln!("Error fetching candidate: {:?}", e),
             }
         }
 
         // 4. Extract unique party IDs as integers
-        let unique_party_ids: Vec<i64> = candidates
-            .iter()
-            .map(|c| c.party_id)
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect();
-
-        // 5. Fetch all parties in one DB call
-        let party_coll: Collection<Party> = db.collection("parties");
-        let mut parties_cursor = match party_coll
-            .find(doc! { "id": { "$in": unique_party_ids.clone() } })
-            .await
-        {
-            Ok(cursor) => cursor,
-            Err(_) => return HttpResponse::InternalServerError().body("Failed to query parties"),
-        };
-
-        let mut party_map: HashMap<i64, Party> = HashMap::new();
-        while let Some(result) = parties_cursor.next().await {
-            match result {
-                Ok(party) => {
-                    party_map.insert(party.id.into(), party);
-                }
-                Err(e) => eprintln!("Error fetching party: {:?}", e),
-            }
-        }
-
-        // 6. Construct response
-        let candidates_list: Vec<Result> = candidates
-            .into_iter()
-            .map(|c| {
-                let pid = c.party_id;
-                let party = party_map.get(&pid);
-                Result {
-                    id: c.id,
-                    name: c.name,
-                    image: c.image,
-                    party_name: party.map_or(c.party_id.to_string(), |p| p.name.clone()),
-                    party_symbol: party.map_or(String::new(), |p| p.symbol.clone()),
-                }
-            })
-            .collect();
-            println!("{:?}",candidates_list);
-        return HttpResponse::Ok().json(candidates_list);
-
+        return HttpResponse::Ok().json(json!({"candidates":candidates}));
+   
     }
 
     // Future: add LokSabha handling here
     HttpResponse::Ok().body("Get Candidates (LokSabha not implemented)")
+}
+
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
+struct User{
+    pub id: i64,
+    pub username: String,
+    pub state: String,
+    pub walletaddress: String,
+    pub image: String,
+    pub email: String,
+}
+
+#[get("/voters")]
+pub async fn get_voters(mongodb:Data<Client>) -> impl Responder{
+    let collection: Collection<Election>  = mongodb.database("voteIndia").collection("election");
+    let result = collection.find_one(doc! {}).sort(doc!{ "date": -1 }).await.unwrap().unwrap();
+    if result.etype == "VidhanSabha" {
+        println!("{:?}",result);
+        let coll = mongodb.database("voteIndia").collection::<User>("users");
+        let mut cursor = match coll.find(doc! {"state":result.state}).await {
+            Ok(cursor) => cursor,
+            Err(_) => return HttpResponse::InternalServerError().json(json!({"message":"Failed to query voters"})),
+        };
+        let mut voters: Vec<User> = Vec::new();
+        while let Some(result) = cursor.next().await {
+            match result {
+                Ok(user) => {
+                    println!("{:?}",user);
+                    voters.push(User {
+                        id: user.id,
+                        username: user.username,
+                        state: user.state,
+                        walletaddress: user.walletaddress,
+                        image: user.image,
+                        email: user.email,
+                    });
+                },
+                Err(e) => eprintln!("Error fetching voter: {:?}", e),
+            }
+        }
+        return HttpResponse::Ok().json(json!({"voters": voters}));
+    }
+
+    HttpResponse::Ok().body("Get Voters")
+}
+
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
+pub struct FundToken {
+    pub addresses: Vec<String>,
+}
+#[post("/fund-token")]
+pub async fn fund_token(web3: Data<Web3<Http>>, data: Json<FundToken>) -> impl Responder {
+    let recipients: Vec<Address>  = data.addresses.iter()
+        .filter_map(|addr| addr.parse::<Address>().ok())
+        .collect();
+    if recipients.is_empty() {
+        return HttpResponse::BadRequest().json(json!({"message": "Invalid addresses provided"}));
+    }   
+    else {
+        println!("Funding {} recipients", recipients.len());
+        let contract = SwarajToken::new(web3.get_ref().clone());
+        match contract.mint(U256::from(recipients.len())).await {
+            Ok(_) => println!("Minted tokens successfully"),
+            Err(e) => {
+                eprintln!("Error minting tokens: {:?}", e);
+                return HttpResponse::InternalServerError().json(json!({"message": "Failed to mint tokens"}));
+            }
+        }
+        match contract.deposit_gas_funds(recipients.len() as i64).await {
+            Ok(_) => println!("Deposited gas funds successfully"),
+            Err(e) => {
+                eprintln!("Error depositing gas funds: {:?}", e);
+                return HttpResponse::InternalServerError().json(json!({"message": "Failed to deposit gas funds"}));
+            }
+        }
+        match contract.batch_transfer(recipients).await {
+            Ok(_) => return HttpResponse::Ok().json(json!({"message": "Tokens funded successfully"})),
+            Err(e) => {
+                eprintln!("Error funding tokens: {:?}", e);
+                return HttpResponse::InternalServerError().json(json!({"message": "Failed to fund tokens"}));   
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
+struct Vote{
+    pub user_walletaddress: String,
+    pub candidate_id: i64,
+    pub district: String,
+    pub constituency: String,
+}
+#[post("/vote")]
+pub async fn vote(web3: Data<Web3<Http>>,mongodb:Data<Client>, data: Json<Vote>) -> impl Responder {
+
+    let collection = mongodb.database("voteIndia").collection::<Election>("election");
+    let result = collection.find_one(doc! {}).sort(doc!{ "date": -1 }).await.unwrap().unwrap();
+    println!("{:?}",result);
+    if result.etype == "VidhanSabha" {
+        let contract = Vidhansabha::new(web3.get_ref().clone(),result.address.clone() );
+        let swaraj_token = SwarajToken::new(web3.get_ref().clone());
+        let user_wallet:Address = match data.user_walletaddress.to_string().parse::<Address>() {
+            Ok(addr) => addr,
+            Err(_) => return HttpResponse::BadRequest().json(json!({"message": "Invalid wallet address format"})),
+        };
+        println!("User wallet address: {:?}", user_wallet);
+        let contract_address = match result.address.parse::<Address>() {
+            Ok(addr) => addr,
+            Err(_) => return HttpResponse::BadRequest().json(json!({"message": "Invalid contract address format"})),
+        };
+        unlock_account(user_wallet).await.unwrap();
+        swaraj_token.approve_contarct(contract_address, U256::from(1), user_wallet).await.unwrap();
+        // Ensure the arguments match the contract's vote method signature
+        match contract.vote(
+            data.district.clone(),
+            data.constituency.clone(),
+            data.candidate_id ,
+            user_wallet,
+        ).await {
+            Ok(_) => println!("Vote cast successfully"),
+            Err(e) => {
+                eprintln!("Error casting vote: {:?}", e);
+                return HttpResponse::InternalServerError().json(json!({"message": "Failed to cast vote"}));
+            }
+        }
+        HttpResponse::Ok().body("Vote cast successfully")
+    }
+    else {
+        HttpResponse::BadRequest().json(json!({"message": "Voting is only available for Vidhan Sabha elections"}))
+    }
+}
+#[get("get-balance/{address}")]
+pub async fn get_balance(web3: Data<Web3<Http>>, address: Path<String>) -> impl Responder {
+    let address = match address.parse::<Address>() {
+        Ok(addr) => addr,
+        Err(_) => return HttpResponse::BadRequest().json(json!({"message": "Invalid address format"})),
+    };  
+
+    let contract = SwarajToken::new(web3.get_ref().clone());
+    match contract.balance_of(address).await {
+        Ok(balance) => HttpResponse::Ok().json(json!({"balance": balance})),
+        Err(e) => {
+            eprintln!("Error fetching balance: {:?}", e);
+            HttpResponse::InternalServerError().json(json!({"message": "Failed to fetch balance"}))
+        }
+    }
 }

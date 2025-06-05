@@ -44,7 +44,7 @@ pub fn create_election(election_type: ElectionType, state: Option<String>,date:i
                 command.env("date", date.to_string());
             },
             ElectionType::VidhanSabha => {
-                let state_name = state.expect("State must be provided for LokSabha election");
+                let state_name = state.expect("State must be provided for Vidhan Sabha election");
                 command.arg("ignition/modules/VidhanSabha.js");
                 command.env("tokenaddress", token_address);
                 command.env("state", state_name);

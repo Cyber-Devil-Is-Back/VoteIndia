@@ -9,6 +9,7 @@ pub struct LokSabha{
     web3 : Web3<Http> ,
     owner: Owner
 }
+#[allow(dead_code)]
 impl LokSabha {
     pub fn new(web3:Web3<Http>,contract_address:String) -> LokSabha{
         dotenv::dotenv().ok();
@@ -31,6 +32,7 @@ impl LokSabha {
         let tx = self.contract.call("registerCandidate", (state,constutiency,candidateid), self.owner.unlock().await.unwrap(), Options::default()).await.unwrap();
         self.confirm_transaction(tx).await
     }
+
     pub async fn vote(&self,state:String,constutiency:String,candidateid:u128) ->Result<(), Error>{
         let tx = self.contract.call("vote", (state,constutiency,candidateid), self.owner.unlock().await.unwrap(), Options::default()).await.unwrap();
         self.confirm_transaction(tx).await
@@ -41,7 +43,7 @@ impl LokSabha {
         Ok(state_result)
     }
     pub async fn get_state_data(&self,state:String) -> Result<StateResult,Error>{
-        let result: Token = self.contract.query("getStateData", (state), None, Options::default(), None).await.unwrap();
+        let result: Token = self.contract.query("getStateData", (state,), None, Options::default(), None).await.unwrap();
         let state_result: StateResult = StateResult::from_tokens(result.into_array().unwrap()).unwrap();
         Ok(state_result)
     }
@@ -51,7 +53,7 @@ impl LokSabha {
         Ok(states)
     }
     pub async fn get_all_constituencies(&self,state:String) -> Result<Vec<String>,Error>{
-        let result: Token = self.contract.query("getAllConstituencies", (state), None, Options::default(), None).await.unwrap();
+        let result: Token = self.contract.query("getAllConstituencies", (state,), None, Options::default(), None).await.unwrap();
         let constutiencies: Vec<String> = result.into_array().unwrap().into_iter().map(|token| token.into_string().unwrap()).collect();
         Ok(constutiencies)
     }

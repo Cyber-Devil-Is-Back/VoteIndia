@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface ISwarajToken {
+interface SwarajToken {
     function balanceOf(address account) external view returns (uint256);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
 contract VidhanSabhaElection {
-    ISwarajToken public token;
+    SwarajToken public token;
     address public admin;
-    uint256 public voteCost = 1 * 10 ** 18;
+    uint256 public voteCost = 1;
     uint256 public electionDate;
     string public state;
 
@@ -51,7 +51,7 @@ contract VidhanSabhaElection {
     constructor(address tokenAddress, string memory _state, uint256 _electionDate) {
         require(tokenAddress != address(0), "Invalid token address");
         require(bytes(_state).length > 0, "Invalid state name");
-        token = ISwarajToken(tokenAddress);
+        token = SwarajToken(tokenAddress);
         state = _state;
         admin = msg.sender;
         electionDate = _electionDate;

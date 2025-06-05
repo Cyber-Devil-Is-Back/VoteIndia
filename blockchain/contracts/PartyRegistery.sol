@@ -97,7 +97,6 @@ contract PartyRegistry {
                 result[index++] = Party( p.id, p.name, p.abbreviation, p.slogan, p.registrationOn, p.description, p.partyType, p.manifesto,p.partyFounder, p.logo, p.state                );
             }
         }
-
         return result;
     }
 

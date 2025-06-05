@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use web3::contract::{Error, tokens::Detokenize};
 use web3::ethabi::Token;
 

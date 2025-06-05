@@ -43,7 +43,7 @@ contract SwarajToken {
         emit Transfer(msg.sender, to, amount);
         return true;
     }
-    
+
     function allowance(address user, address spender) public view returns (uint256) {
         return allowances[user][spender];
     }
@@ -67,14 +67,20 @@ contract SwarajToken {
         return true;
     }
 
+    /// ✅ Use contract's own balance to send gas for recipients
     function batchTransfer(address[] calldata recipients) external onlyOwner {
         require(recipients.length > 0, "No recipients provided");
-        require(recipients.length <= (balances[msg.sender] / (10 ** decimals)), "Not enough tokens");
+
+        uint256 tokenUnit = 1 ;
+        uint256 gasRequired = recipients.length * 0.001 ether;
+
+        require(balances[owner] >= recipients.length * tokenUnit, "Not enough tokens");
+        require(address(this).balance >= gasRequired, "Insufficient contract gas balance");
 
         for (uint256 i = 0; i < recipients.length; i++) {
-            balances[msg.sender] -= 1 * 10 ** decimals;
-            balances[recipients[i]] += 1 * 10 ** decimals;
-            emit BatchTransfer(msg.sender, recipients[i], 1 * 10 ** decimals);
+            balances[owner] -= tokenUnit;
+            balances[recipients[i]] += tokenUnit;
+            emit BatchTransfer(msg.sender, recipients[i], tokenUnit);
 
             payable(recipients[i]).transfer(0.001 ether);
             emit GasSent(recipients[i], 0.001 ether);
@@ -84,31 +90,32 @@ contract SwarajToken {
     function batchBurn(address[] calldata holders) external onlyOwner {
         require(holders.length > 0, "No holders provided");
 
+        uint256 tokenUnit = 1 * 10 ** uint256(decimals);
+
         for (uint256 i = 0; i < holders.length; i++) {
-            require(balances[holders[i]] >= 1 * 10 ** decimals, "Insufficient balance to burn");
-            balances[holders[i]] -= 1 * 10 ** decimals;
-            totalSupply -= 1 * 10 ** decimals;
-            emit BatchBurn(holders[i], 1 * 10 ** decimals);
+            require(balances[holders[i]] >= tokenUnit, "Insufficient balance to burn");
+            balances[holders[i]] -= tokenUnit;
+            totalSupply -= tokenUnit;
+            emit BatchBurn(holders[i], tokenUnit);
         }
     }
 
     function mint(uint256 amount) external onlyOwner {
         require(amount > 0, "Mint amount must be greater than zero");
 
-        balances[owner] += amount; // Always mint to the contract owner
+        balances[owner] += amount;
         totalSupply += amount;
-
         emit Minted(owner, amount);
     }
 
     function burnAllTokens() external onlyOwner {
-        uint256 supply = totalSupply;
         totalSupply = 0;
         balances[owner] = 0;
-        emit TokensBurned(supply);
+        emit TokensBurned(totalSupply);
     }
 
     function depositGasFunds() external payable onlyOwner {
+        require(msg.value > 0, "No ether sent");
         emit GasFundsDeposited(msg.value);
     }
 

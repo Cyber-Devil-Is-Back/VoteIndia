@@ -92,6 +92,7 @@ export default function NominationsPage() {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/election/get-nominations`);
         if (!response.ok) throw new Error('Failed to fetch nominations');
         const data: Nomination[] = await response.json();
+        console.log(data)
         const rowsWithId = data.map((item) => ({
           ...item,
           id: item.candidateid,
