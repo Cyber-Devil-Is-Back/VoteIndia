@@ -135,7 +135,7 @@ export default function NominationPage() {
                           .map(candidate => (
                             <MenuItem key={candidate.id} value={candidate.id}>
                               <Box display="flex" alignItems="center">
-                                <Avatar  src={candidate.image} alt={candidate.name}  style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 8 }}></Avatar>
+                                <Avatar  src={`${process.env.NEXT_PUBLIC_API_URL}/${candidate.image}`} alt={candidate.name}  style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 8 }}></Avatar>
                                
                                 <Typography>{candidate.name}</Typography>
                               </Box>

@@ -20,7 +20,7 @@ export default function VotePage() {
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const[voterinfo,setVoterInfo] = useState({
-    name:"",
+    candidateid:"",
     wallet_address:"",
   });
   const faceDescriptorRef = useRef<number[]>([]);
@@ -71,7 +71,7 @@ export default function VotePage() {
     const user = JSON.parse(userStr);
     if (!user?.state) return;
     setVoterInfo({
-      name: user.name || "Unknown",
+      candidateid: user.id || "Unknown",
       wallet_address: user.wallet_address || "Unknown"
     });
 
@@ -245,7 +245,7 @@ export default function VotePage() {
           </Box>
           <Box display={'flex'} gap={1}>
             <Typography variant="body1" fontWeight={600}> Voter Name : </Typography>
-            <Typography variant="body1"> {voterinfo.name}  </Typography>
+            <Typography variant="body1"> {voterinfo.candidateid}  </Typography>
           </Box>
           <Box display={'flex'} gap={1}>
             <Typography variant="body1" fontWeight={600}> Wallet Address : </Typography>

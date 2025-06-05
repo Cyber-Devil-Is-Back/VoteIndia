@@ -18,7 +18,7 @@ use super::forms::RegisterNationalCandidate;
 pub async fn register_candidate(client: Data<Client>, mut form: MultipartForm<RegisterNationalCandidate>) -> impl Responder {
     let database  = client.database("voteIndia");
     let collection:Collection<NationalCandidate> = database.collection("national_candidates");
-    if form.name.is_empty() || form.party_id.is_empty() || form.state.is_empty()|| form.constituency.is_empty() || form.0.image.file_name.is_none() {
+    if form.name.is_empty() || form.party_id.0 <=0 || form.state.is_empty()|| form.constituency.is_empty() || form.0.image.file_name.is_none() {
         return HttpResponse::BadRequest().json("All fields are required")
     }
     let filename = form.0.image.file_name.clone().unwrap();

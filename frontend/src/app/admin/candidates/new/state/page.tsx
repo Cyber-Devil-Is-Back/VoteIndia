@@ -14,7 +14,7 @@ const columns: GridColDef[] = [
   { field: 'gender', headerName: 'Gender', width: 150 },
   { field: 'image', headerName: 'Image', width: 140,renderCell: (params) => (
             <Box display="flex" justifyContent="center" alignItems="center">
-                <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${params.value}`} alt="Candidate Image" variant="rounded" style={{ width: '50px', height: '50px' }} />
+                <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${params.value}`} alt="Candidate Image" variant="rounded" style={{ width: '80px', height: '80px' }} />
             </Box>) },
   { field: 'dob', headerName: 'Date Of Birth', width: 200 },
   { field: 'state', headerName: 'State', width: 200 },

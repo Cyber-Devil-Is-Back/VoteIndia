@@ -132,9 +132,9 @@ pub async fn get_all_new_candidates(client: Data<Client>) -> impl Responder {
 }
 
 #[get("/state/candidate/election_candidate/{id}")]
-pub async fn get_election_candidate(client:Data<Client>,id:Path<String>) ->  impl Responder{
+pub async fn get_election_candidate(client:Data<Client>,id:Path<i64>) ->  impl Responder{
     let collection = client.database("voteIndia").collection::<ElectionStateCandidate>("state_candidates");
-    match collection.find(doc! {"party_id": id.to_string(), "status": PartyStatus::Approved}).projection(doc! {}).await
+    match collection.find(doc! {"party_id": *id, "status": PartyStatus::Approved}).projection(doc! {}).await
     {
         Ok(mut cursor) => {
             let mut candidates = Vec::new();

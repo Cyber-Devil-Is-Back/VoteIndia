@@ -35,8 +35,8 @@ export default function NationalCandidatesLayout() {
         { field: 'name', headerName: 'Name', width: 300 },
         { field: 'gender', headerName : 'Gender', width: 100 },
         { field: 'image', headerName: 'Image', width: 100 ,renderCell: (params) => (
-            <Box display="flex" justifyContent="center" alignItems="center">
-                <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${params.value}`} alt="Candidate Image" variant="rounded" style={{ width: '50px', height: '50px' }} />
+            <Box display="flex" flexDirection='row' justifyContent="center" alignItems="center">
+                <Avatar src={`${process.env.NEXT_PUBLIC_API_URL}/${params.value}`} alt="Candidate Image" variant="rounded" style={{ width: '80px', height: '80px' }} />
             </Box>)},
         { field: 'dob', headerName: 'Date Of Birth', width: 150 },
         { field: 'state', headerName: 'State', width: 260 },

@@ -48,9 +48,10 @@ export default function Dialoge(props: CandidateProps) {
     }
    useEffect(() => {
         if (props.open && props.data?.party_id) {
+            console.log("Fetching party data for candidate:", props.data);
             fetchParty();
         }
-    }, );
+    },[props.open] );
 
     const handleReject = async () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${props.updateLink}`, {
