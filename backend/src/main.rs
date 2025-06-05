@@ -37,11 +37,15 @@ async fn main() -> std::io::Result<()> {
     .app_data(web::PayloadConfig::new(20 * 1024 * 1024))
     .wrap(
         Cors::default()
-            .allow_any_origin()// Allow frontend origin
-            .allowed_methods(vec!["GET", "POST", "PATCH","PUT","DELETE"])
+            .allowed_origin_fn(|origin, _req_head| {
+    origin.as_bytes().starts_with(b"https://vote-india-b5owryo6f-cyber-devil-is-backs-projects.vercel.app")
+})
+
+            .allowed_methods(vec!["GET", "POST", "PATCH","PUT","DELETE","OPTIONS"])
             .allowed_headers(vec![
                 http::header::ACCEPT,
                 http::header::CONTENT_TYPE,
+                http::header::ORIGIN,
             ])
             .expose_headers(&[http::header::SET_COOKIE])  
             .supports_credentials() 

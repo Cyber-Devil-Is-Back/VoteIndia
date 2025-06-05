@@ -24,7 +24,7 @@ export default function Login() {
           id: Number(id),
           password:password,
         }),
-        credentials: "include",  // ✅ Required for cookies to be stored
+       // ✅ Required for cookies to be stored
           });
 
       if (!response.ok) {
