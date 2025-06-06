@@ -7,7 +7,7 @@ use serde_json::json;
 use web3::{ethabi::Address, transports::Http, types::U256, Web3};
 use futures::stream::StreamExt;
 
-use crate::utils::{contracts::{ party::PartyClient, swarajtoken::SwarajToken, vidhansabha::Vidhansabha}, user::generate_account::unlock_account};
+use crate::utils::{contracts::{ party::PartyClient, structures::District, swarajtoken::SwarajToken, vidhansabha::Vidhansabha}, user::generate_account::unlock_account};
 
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
 struct Location {
@@ -253,4 +253,50 @@ pub async fn get_balance(web3: Data<Web3<Http>>, address: Path<String>) -> impl 
             HttpResponse::InternalServerError().json(json!({"message": "Failed to fetch balance"}))
         }
     }
+}
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone)]
+struct States{
+    pub districts: Vec<String>,
+}
+
+#[get("/results")]
+pub async fn get_results(web3: Data<Web3<Http>>,mongodb:Data<Client>) -> impl Responder {
+    let collection = mongodb.database("voteIndia").collection::<Election>("election");
+    let result = collection.find_one(doc! {}).sort(doc!{ "date": -1 }).await.unwrap().unwrap();
+    if result.etype == "VidhanSabha" {
+        let coll = mongodb.database("voteIndia").collection::<States>("stateConstituency");
+        let pipeline = vec![
+                doc! { "$match": { "state": result.state } },
+                doc! { "$project": {
+                    "_id": 0,
+                    "districts": {
+                        "$map": {
+                            "input": "$districts",
+                            "as": "d",
+                            "in": "$$d.district"
+                        }
+                    }
+                }}
+            ];
+
+        let states_data =  coll.aggregate(pipeline).await.unwrap().next().await.unwrap().unwrap(); 
+        let contract = Vidhansabha::new(web3.get_ref().clone(),result.address.clone() );
+        let mut data:Vec<District> = Vec::new();
+        for district in states_data.get_array("districts").unwrap() {
+            let constituency_data = match contract.get_district_data(district.to_string()).await {
+                Ok(data) => data,
+                Err(_) => return HttpResponse::InternalServerError().json(json!({"message": "Failed to fetch constituency data"})),
+            };
+            println!("{:?}",constituency_data);
+            data.push(District {
+                name: district.to_string(),
+                constutiencies: constituency_data.constutiencies,
+            });
+           
+        }
+
+       
+        return HttpResponse::Ok().json(json!({"results": data}));
+    }
+    HttpResponse::BadRequest().json(json!({"message": "Results are only available for Vidhan Sabha elections"}))
 }

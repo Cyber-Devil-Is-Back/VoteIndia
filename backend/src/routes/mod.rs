@@ -55,6 +55,7 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
                 .service(election::voting::fund_token)
                 .service(election::voting::get_balance)
                 .service(election::voting::vote)
+                .service(election::voting::get_results)
                
         )
         .service(

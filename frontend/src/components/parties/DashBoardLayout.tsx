@@ -18,8 +18,7 @@ const menuList : MenuItem[] = [
   { type: 'menuitem', name: "Candidate List", icon: <PeopleAlt />, link: "/party/candidate-list" },
   { type: 'menuitem', name: "Nomination", icon: <PersonAddIcon />, link: "/party/nomination" },
   { type: 'divider' },
-  { type: 'menuitem', name: "Orders", icon: <ShoppingCartIcon />, link: "/orders" },
-  { type: 'menuitem', name: "Dashboard", icon: <ShoppingCartIcon />, link: "/orders" },
+
 ];
 export default function DashBoardLayout({ children }: { children: React.ReactNode }) {
   

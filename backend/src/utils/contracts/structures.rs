@@ -1,19 +1,24 @@
 #![allow(dead_code)]
+use serde::{Deserialize, Serialize};
 use web3::contract::{Error, tokens::Detokenize};
 use web3::ethabi::Token;
 
+#[derive(Serialize,Deserialize, Debug)]
 pub struct StateResult{
     pub name: String,
     pub constutiencies: Vec<ConstutiencyResult>,
 }
+#[derive(Serialize,Deserialize, Debug)]
 pub struct District{
     pub name: String,
     pub constutiencies: Vec<ConstutiencyResult>,
 }
+#[derive(Serialize,Deserialize, Debug)]
 pub struct ConstutiencyResult{
     pub name: String,
     pub candidates: Vec<CandidateResult>,
 }
+#[derive(Serialize,Deserialize, Debug)]
 pub struct CandidateResult{
     pub id :u128,
     pub votes:u128,
